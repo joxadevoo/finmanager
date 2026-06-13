@@ -885,7 +885,12 @@ export default function App() {
                   <span className="w-3 h-3 rounded-full bg-emerald-500/40" />
                 </div>
 
-                <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400 mb-4 text-left">Real-Vaqt Demo Panel</h3>
+                <div className="flex items-center gap-2.5 mb-4">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse-live" style={{ display: 'inline-block', flexShrink: 0 }} />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400 text-left" style={{ margin: 0 }}>
+                    JONLI MOLIYAVIY PORTFEL SIMULYATORI
+                  </h3>
+                </div>
 
                 {/* Mock KPI Cards */}
                 <div className="grid grid-cols-2 gap-4 mb-5">
