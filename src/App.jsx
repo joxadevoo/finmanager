@@ -25,6 +25,25 @@ import { db, auth, googleProvider } from './firebase';
 import { signInWithRedirect, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, collection, getDocs, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 
+// MM Currency Icon component for the logo
+const MMCurrencyIcon = ({ className = "w-6 h-6", style = {} }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.5" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+    className={className}
+    style={style}
+  >
+    <path d="M4 18V6l8 8 8-8v12" stroke="currentColor" />
+    <line x1="2" y1="10" x2="22" y2="10" stroke="currentColor" />
+    <line x1="2" y1="13" x2="22" y2="13" stroke="currentColor" />
+  </svg>
+);
+
 // Subcomponents
 import Dashboard from './components/Dashboard';
 import Transactions from './components/Transactions';
@@ -674,7 +693,7 @@ export default function App() {
                   border: '1px solid rgba(255, 255, 255, 0.1)'
                 }}
               >
-                <TrendingUp style={{ width: '20px', height: '20px', strokeWidth: '2.5px' }} />
+                <MMCurrencyIcon style={{ width: '20px', height: '20px' }} />
               </div>
               <div>
                 <h1 
@@ -687,7 +706,7 @@ export default function App() {
                     WebkitTextFillColor: 'transparent'
                   }}
                 >
-                  joxaFintech
+                  MoliyaManage
                 </h1>
               </div>
             </div>
@@ -1067,7 +1086,7 @@ export default function App() {
             }}
           >
             <div>
-              &copy; {new Date().getFullYear()} joxaFintech. Barcha huquqlar himoyalangan.
+              &copy; {new Date().getFullYear()} MoliyaManage. Barcha huquqlar himoyalangan.
             </div>
             <div>
               Xavfsiz Google Auth &bull; Firestore Cloud Architecture
@@ -1097,12 +1116,32 @@ export default function App() {
         {/* Top brand */}
         <div className="space-y-8">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-tr from-purple-500 to-indigo-600 rounded-xl text-white shadow-md">
-              <TrendingUp className="w-6 h-6" />
+            <div 
+              className="flex items-center justify-center text-white shadow-md"
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+                boxShadow: '0 4px 12px rgba(168, 85, 247, 0.25)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                flexShrink: 0
+              }}
+            >
+              <MMCurrencyIcon style={{ width: '20px', height: '20px' }} />
             </div>
             <div>
-              <h1 className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white to-purple-400 light-theme:from-slate-900 light-theme:to-purple-700 bg-clip-text text-transparent">
-                joxaFintech
+              <h1 
+                className="font-extrabold text-lg tracking-tight bg-clip-text text-transparent"
+                style={{
+                  background: theme === 'dark' 
+                    ? 'linear-gradient(135deg, #ffffff 0%, #c084fc 100%)' 
+                    : 'linear-gradient(135deg, #1e1b4b 0%, #4f46e5 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}
+              >
+                MoliyaManage
               </h1>
               <p className="text-[10px] uppercase tracking-widest text-purple-400 font-bold">Smart Manager</p>
             </div>
@@ -1164,13 +1203,13 @@ export default function App() {
         <header className="glass-panel m-4 p-3 px-6 flex items-center justify-between gap-4 rounded-full">
           {/* Mobile Brand Title */}
           <div className="flex items-center gap-3 lg:hidden">
-            <TrendingUp className="w-6 h-6 text-purple-500" />
-            <span className="font-extrabold text-sm tracking-tight">joxaFintech</span>
+            <MMCurrencyIcon className="w-6 h-6 text-purple-500" />
+            <span className="font-extrabold text-sm tracking-tight text-[var(--text-primary)]">MoliyaManage</span>
           </div>
 
           {/* PC Navigation Breadcrumbs */}
           <div className="hidden lg:flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-            <span className="opacity-60">joxaFintech</span>
+            <span className="opacity-60">MoliyaManage</span>
             <span className="opacity-40">/</span>
             <span className="text-purple-400">
               {activeTab === 'dashboard' && 'Boshqaruv paneli'}
