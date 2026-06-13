@@ -44,6 +44,174 @@ const MMCurrencyIcon = ({ className = "w-6 h-6", style = {} }) => (
   </svg>
 );
 
+// Interactive Savings Simulator for the landing page hero section
+const SavingsSimulator = ({ theme }) => {
+  const [monthly, setMonthly] = useState(1000000); // 1,000,000 UZS
+  const [years, setYears] = useState(3); // 3 years
+  const [rate, setRate] = useState(20); // 20% interest rate
+
+  // Calculate compound interest
+  const calculateSavings = () => {
+    const P = monthly;
+    const t = years;
+    const r = rate / 100;
+    const n = 12; // monthly compounding
+
+    if (r === 0) {
+      const totalInvested = P * n * t;
+      return {
+        invested: totalInvested,
+        earned: 0,
+        total: totalInvested
+      };
+    }
+
+    const ratePerPeriod = r / n;
+    const totalPeriods = n * t;
+    
+    // Future value of an annuity formula: FV = P * [((1 + r)^t - 1) / r] * (1 + r)
+    const fv = P * (((Math.pow(1 + ratePerPeriod, totalPeriods) - 1) / ratePerPeriod) * (1 + ratePerPeriod));
+    const totalInvested = P * totalPeriods;
+    const earned = Math.max(0, fv - totalInvested);
+
+    return {
+      invested: Math.round(totalInvested),
+      earned: Math.round(earned),
+      total: Math.round(fv)
+    };
+  };
+
+  const { invested, earned, total } = calculateSavings();
+
+  const formatUZS = (value) => {
+    return new Intl.NumberFormat('uz-UZ', { style: 'decimal' }).format(value) + ' UZS';
+  };
+
+  // Percent of growth for progress bar
+  const earnedPercent = total > 0 ? (earned / total) * 100 : 0;
+
+  return (
+    <div className="w-full space-y-5">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse-live" style={{ display: 'inline-block', flexShrink: 0 }} />
+        <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400 text-left" style={{ margin: 0 }}>
+          🎯 AQLLI TEJASH SIMULYATORI
+        </h3>
+      </div>
+      <p className="text-[11px] text-[var(--text-secondary)] text-left leading-relaxed">
+        Oylik jamg'arma va bank foiz stavkasi yordamida kelajakdagi boyligingizni hisoblang. Murakkab foiz (compound interest) kuchi siz uchun qanday ishlashini ko'ring!
+      </p>
+
+      {/* Sliders Container */}
+      <div className="space-y-4">
+        {/* Slider 1: Monthly contribution */}
+        <div className="space-y-1.5 text-left">
+          <div className="flex justify-between text-xs font-semibold">
+            <span className="text-[var(--text-secondary)]">Oylik Jamg'arma:</span>
+            <span className="text-purple-400 font-bold">{formatUZS(monthly)}</span>
+          </div>
+          <input 
+            type="range" 
+            min="100000" 
+            max="10000000" 
+            step="100000" 
+            value={monthly} 
+            onChange={(e) => setMonthly(Number(e.target.value))}
+            className="w-full cursor-pointer h-1.5 bg-white/10 rounded-lg appearance-none"
+            style={{ accentColor: 'var(--accent-primary)' }}
+          />
+          <div className="flex justify-between text-[9px] text-[var(--text-muted)]">
+            <span>100K UZS</span>
+            <span>10M UZS</span>
+          </div>
+        </div>
+
+        {/* Slider 2: Years */}
+        <div className="space-y-1.5 text-left">
+          <div className="flex justify-between text-xs font-semibold">
+            <span className="text-[var(--text-secondary)]">Muddat (Yil):</span>
+            <span className="text-purple-400 font-bold">{years} yil</span>
+          </div>
+          <input 
+            type="range" 
+            min="1" 
+            max="10" 
+            step="1" 
+            value={years} 
+            onChange={(e) => setYears(Number(e.target.value))}
+            className="w-full cursor-pointer h-1.5 bg-white/10 rounded-lg appearance-none"
+            style={{ accentColor: 'var(--accent-primary)' }}
+          />
+          <div className="flex justify-between text-[9px] text-[var(--text-muted)]">
+            <span>1 yil</span>
+            <span>10 yil</span>
+          </div>
+        </div>
+
+        {/* Slider 3: Interest rate */}
+        <div className="space-y-1.5 text-left">
+          <div className="flex justify-between text-xs font-semibold">
+            <span className="text-[var(--text-secondary)]">Yillik Foiz (Stavka):</span>
+            <span className="text-purple-400 font-bold">{rate}%</span>
+          </div>
+          <input 
+            type="range" 
+            min="0" 
+            max="30" 
+            step="1" 
+            value={rate} 
+            onChange={(e) => setRate(Number(e.target.value))}
+            className="w-full cursor-pointer h-1.5 bg-white/10 rounded-lg appearance-none"
+            style={{ accentColor: 'var(--accent-primary)' }}
+          />
+          <div className="flex justify-between text-[9px] text-[var(--text-muted)]">
+            <span>0% (Naqd pul)</span>
+            <span>30% yillik</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Results Card */}
+      <div className="p-4 rounded-xl border border-white/5 bg-white/5 space-y-3">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="text-left">
+            <p className="text-[9px] text-[var(--text-muted)] uppercase font-semibold">Jami kiritilgan pul</p>
+            <p className="text-xs font-bold text-[var(--text-primary)] mt-0.5">{formatUZS(invested)}</p>
+          </div>
+          <div className="text-left">
+            <p className="text-[9px] text-[var(--text-muted)] uppercase font-semibold">Foizli sof daromad</p>
+            <p className="text-xs font-bold text-emerald-400 mt-0.5">+{formatUZS(earned)}</p>
+          </div>
+        </div>
+
+        {/* Progress bar comparison */}
+        <div className="space-y-1">
+          <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden flex">
+            <div className="h-full bg-purple-500" style={{ width: `${100 - earnedPercent}%`, background: 'var(--accent-primary)' }}></div>
+            <div className="h-full bg-emerald-500" style={{ width: `${earnedPercent}%` }}></div>
+          </div>
+          <div className="flex justify-between text-[8px] text-[var(--text-muted)]">
+            <span>Kiritilgan pul ({Math.round(100 - earnedPercent)}%)</span>
+            <span>Sof daromad ({Math.round(earnedPercent)}%)</span>
+          </div>
+        </div>
+
+        <div className="pt-2.5 border-t border-white/5 flex justify-between items-center">
+          <div className="text-left">
+            <p className="text-[10px] text-[var(--text-muted)] uppercase font-bold">Yakuniy Jamg'arma</p>
+            <p className="text-lg font-black text-purple-300 mt-0.5">{formatUZS(total)}</p>
+          </div>
+          {earned > 0 && (
+            <div className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-bold">
+              {Math.round((total / invested) * 100 - 100)}% o'sish!
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Subcomponents
 import Dashboard from './components/Dashboard';
 import Transactions from './components/Transactions';
@@ -863,7 +1031,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Right Column: Visual Dashboard Mockup */}
+            {/* Right Column: Interactive Savings Simulator */}
             <div className="flex justify-center z-10">
               <div 
                 className="glass-card animate-scale-up"
@@ -878,85 +1046,7 @@ export default function App() {
                   position: 'relative'
                 }}
               >
-                {/* Mock Window Controls Decorator */}
-                <div className="flex gap-1.5 mb-5">
-                  <span className="w-3 h-3 rounded-full bg-rose-500/40" />
-                  <span className="w-3 h-3 rounded-full bg-amber-500/40" />
-                  <span className="w-3 h-3 rounded-full bg-emerald-500/40" />
-                </div>
-
-                <div className="flex items-center gap-2.5 mb-4">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse-live" style={{ display: 'inline-block', flexShrink: 0 }} />
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400 text-left" style={{ margin: 0 }}>
-                    JONLI MOLIYAVIY PORTFEL SIMULYATORI
-                  </h3>
-                </div>
-
-                {/* Mock KPI Cards */}
-                <div className="grid grid-cols-2 gap-4 mb-5">
-                  <div className="p-4 rounded-xl border border-white/5 bg-white/5 text-left">
-                    <p className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">Umumiy Mablag'</p>
-                    <p className="text-md font-bold text-[var(--text-primary)] mt-1">15,400,000 UZS</p>
-                  </div>
-                  <div className="p-4 rounded-xl border border-white/5 bg-white/5 text-left">
-                    <p className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">Oylik Xarajat</p>
-                    <p className="text-md font-bold text-rose-400 mt-1">3,850,000 UZS</p>
-                  </div>
-                </div>
-
-                {/* SVG Chart & Budgets Preview */}
-                <div className="flex flex-col sm:flex-row gap-5 items-center mb-5">
-                  {/* SVG Chart */}
-                  <div className="relative w-24 h-24 flex items-center justify-center shrink-0">
-                    <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="3" />
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#8c6239" strokeWidth="3" strokeDasharray="60 40" strokeDashoffset="0" style={{ stroke: 'var(--accent-primary)' }} />
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#10b981" strokeWidth="3" strokeDasharray="25 75" strokeDashoffset="-60" />
-                      <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f59e0b" strokeWidth="3" strokeDasharray="15 85" strokeDashoffset="-85" />
-                    </svg>
-                    <div className="absolute text-[9px] font-bold text-[var(--text-secondary)]">72% Tejash</div>
-                  </div>
-
-                  {/* Budgets Progress */}
-                  <div className="flex-1 space-y-2.5 w-full text-left">
-                    <div>
-                      <div className="flex justify-between text-[10px] font-semibold mb-1">
-                        <span>Oziq-ovqat</span>
-                        <span>850,000 / 1,200,000 UZS</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-purple-500 rounded-full" style={{ width: '70.8%', background: 'var(--accent-primary)' }}></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-[10px] font-semibold mb-1">
-                        <span>Transport</span>
-                        <span>350,000 / 500,000 UZS</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 rounded-full" style={{ width: '70%' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mock Transactions list */}
-                <div className="space-y-2 text-left">
-                  <div className="flex justify-between items-center p-2.5 rounded-lg bg-white/5 border border-white/5 text-[11px]">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center font-bold">C</div>
-                      <span>Kofe & Hordiq</span>
-                    </div>
-                    <span className="font-bold text-rose-400">-45,000 UZS</span>
-                  </div>
-                  <div className="flex justify-between items-center p-2.5 rounded-lg bg-white/5 border border-white/5 text-[11px]">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">I</div>
-                      <span>Freelance shartnoma</span>
-                    </div>
-                    <span className="font-bold text-emerald-400">+12,000,000 UZS</span>
-                  </div>
-                </div>
+                <SavingsSimulator theme={theme} />
               </div>
             </div>
 
