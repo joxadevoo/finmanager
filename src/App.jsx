@@ -758,6 +758,7 @@ export default function App() {
               <div 
                 className="inline-flex items-center gap-2"
                 style={{
+                  display: 'inline-flex',
                   padding: '6px 14px',
                   borderRadius: '9999px',
                   background: 'rgba(var(--accent-rgb), 0.08)',
