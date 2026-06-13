@@ -662,20 +662,31 @@ export default function App() {
             }}
           >
             {/* Brand Logo */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3">
               <div 
                 className="flex items-center justify-center text-white" 
                 style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
-                  background: 'var(--accent-gradient)'
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #a855f7 0%, #6366f1 100%)',
+                  boxShadow: '0 4px 12px rgba(168, 85, 247, 0.25)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
                 }}
               >
-                <TrendingUp style={{ width: '18px', height: '18px' }} />
+                <TrendingUp style={{ width: '20px', height: '20px', strokeWidth: '2.5px' }} />
               </div>
               <div>
-                <h1 className="font-extrabold text-md tracking-tight bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">
+                <h1 
+                  className="font-extrabold text-lg tracking-tight bg-clip-text text-transparent"
+                  style={{
+                    background: theme === 'dark' 
+                      ? 'linear-gradient(135deg, #ffffff 0%, #c084fc 100%)' 
+                      : 'linear-gradient(135deg, #1e1b4b 0%, #4f46e5 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent'
+                  }}
+                >
                   joxaFintech
                 </h1>
               </div>
