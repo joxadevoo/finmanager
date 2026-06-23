@@ -938,7 +938,7 @@ export default function App() {
                     WebkitTextFillColor: 'transparent'
                   }}
                 >
-                  MoliyaManage
+                  MMoliya
                 </h1>
               </div>
             </div>
@@ -1295,7 +1295,7 @@ export default function App() {
             }}
           >
             <div>
-              &copy; {new Date().getFullYear()} MoliyaManage. Barcha huquqlar himoyalangan.
+              &copy; {new Date().getFullYear()} MMoliya. Barcha huquqlar himoyalangan.
             </div>
             <div>
               Xavfsiz Google Auth &bull; Firestore Cloud Architecture
@@ -1351,7 +1351,7 @@ export default function App() {
                   WebkitTextFillColor: 'transparent'
                 }}
               >
-                MoliyaManage
+                MMoliya
               </h1>
               <p className="text-[10px] uppercase tracking-widest text-purple-400 font-bold">Smart Manager</p>
             </div>
@@ -1421,12 +1421,12 @@ export default function App() {
           {/* Mobile Brand Title */}
           <div className="flex items-center gap-3 lg:hidden">
             <MMCurrencyIcon className="w-6 h-6 text-purple-500" />
-            <span className="font-extrabold text-sm tracking-tight text-[var(--text-primary)]">MoliyaManage</span>
+            <span className="font-extrabold text-sm tracking-tight text-[var(--text-primary)]">MMoliya</span>
           </div>
 
           {/* PC Navigation Breadcrumbs */}
           <div className="hidden lg:flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-            <span className="opacity-60">MoliyaManage</span>
+            <span className="opacity-60">MMoliya</span>
             <span className="opacity-40">/</span>
             <span className="text-purple-400">
               {activeTab === 'dashboard' && 'Boshqaruv paneli'}
@@ -1609,7 +1609,7 @@ export default function App() {
             </div>
             
             <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-              MoliyaManage ilovasini shaxsiy kompyuteringiz yoki mobil telefoningiz ekraniga mustaqil ilova qilib o'rnatib olishingiz mumkin. Bu sizga internet bo'lmaganda ham ilovadan foydalanish imkonini beradi.
+              MMoliya ilovasini shaxsiy kompyuteringiz yoki mobil telefoningiz ekraniga mustaqil ilova qilib o'rnatib olishingiz mumkin. Bu sizga internet bo'lmaganda ham ilovadan foydalanish imkonini beradi.
             </p>
 
             <div className="space-y-4">
