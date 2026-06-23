@@ -219,6 +219,7 @@ import Budgets from './components/Budgets';
 import Goals from './components/Goals';
 import Accounts from './components/Accounts';
 import Analytics from './components/Analytics';
+import SmartHabits from './components/SmartHabits';
 
 // Initial Mock Data
 import { 
@@ -232,11 +233,44 @@ import {
 export default function App() {
   const [activeTab, setActiveTab] = useState(() => {
     const hash = window.location.hash.replace('#/', '');
-    const validTabs = ['dashboard', 'transactions', 'budgets', 'goals', 'accounts', 'analytics'];
+    const validTabs = ['dashboard', 'transactions', 'budgets', 'goals', 'accounts', 'analytics', 'habits'];
     return validTabs.includes(hash) ? hash : 'dashboard';
   });
   const [theme, setTheme] = useState(() => localStorage.getItem('fm_theme') || 'dark');
   const [notifications, setNotifications] = useState([]);
+
+  // --- PWA Installation State ---
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      console.log('beforeinstallprompt event fired');
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    const checkStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    setIsStandalone(checkStandalone);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`User Choice: ${outcome}`);
+      setDeferredPrompt(null);
+    } else {
+      setIsInstallModalOpen(true);
+    }
+  };
 
   // --- Hash Routing Sync ---
   useEffect(() => {
@@ -246,7 +280,7 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#/', '');
-      const validTabs = ['dashboard', 'transactions', 'budgets', 'goals', 'accounts', 'analytics'];
+      const validTabs = ['dashboard', 'transactions', 'budgets', 'goals', 'accounts', 'analytics', 'habits'];
       if (validTabs.includes(hash)) {
         setActiveTab(hash);
       }
@@ -761,6 +795,15 @@ export default function App() {
             accounts={accounts}
           />
         );
+      case 'habits':
+        return (
+          <SmartHabits 
+            transactions={transactions}
+            accounts={accounts}
+            budgets={budgets}
+            goals={goals}
+          />
+        );
       default:
         return <div>Sahifa topilmadi</div>;
     }
@@ -1028,6 +1071,39 @@ export default function App() {
                 >
                   Imkoniyatlar
                 </button>
+
+                {!isStandalone && (
+                  <button 
+                    onClick={handleInstallClick}
+                    className="flex items-center justify-center gap-3 font-bold uppercase tracking-wider cursor-pointer"
+                    style={{
+                      width: '100%',
+                      maxWidth: '300px',
+                      padding: '16px 32px',
+                      background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%)',
+                      border: '1px solid rgba(168, 85, 247, 0.45)',
+                      borderRadius: '50px',
+                      color: '#c084fc',
+                      backdropFilter: 'blur(8px)',
+                      fontSize: '0.85rem',
+                      transition: 'all 0.3s cubic-bezier(0.25, 1, 0.5, 1)',
+                      letterSpacing: '0.08em'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(99, 102, 241, 0.3) 100%)';
+                      e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                      e.currentTarget.style.borderColor = '#c084fc';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%)';
+                      e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                      e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.45)';
+                    }}
+                  >
+                    <Sparkles className="w-4.5 h-4.5 text-purple-300 animate-pulse" />
+                    <span>Ilovani o'rnatish</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1197,7 +1273,8 @@ export default function App() {
     transactions: 1,
     budgets: 2,
     goals: 3,
-    analytics: 4
+    analytics: 4,
+    habits: 5
   };
   const activeTabIdx = tabIndices[activeTab] ?? 0;
 
@@ -1279,6 +1356,13 @@ export default function App() {
               <BarChart2 className="w-5 h-5" />
               <span>Moliya Tahlili</span>
             </button>
+            <button 
+              onClick={() => setActiveTab('habits')} 
+              className={`w-full nav-link ${activeTab === 'habits' ? 'active' : ''}`}
+            >
+              <Sparkles className="w-5 h-5" />
+              <span>Smart Odatlar</span>
+            </button>
           </nav>
         </div>
 
@@ -1313,6 +1397,7 @@ export default function App() {
               {activeTab === 'goals' && 'Jamg\'armalar'}
               {activeTab === 'accounts' && 'Hamyonlar'}
               {activeTab === 'analytics' && 'Moliya tahlili'}
+              {activeTab === 'habits' && 'Smart odatlar'}
             </span>
           </div>
 
@@ -1411,7 +1496,7 @@ export default function App() {
             <div 
               className="mobile-nav-indicator"
               style={{
-                width: 'calc((100% - 32px) / 5)', // subtracting px-4 container padding (16px left + 16px right)
+                width: 'calc((100% - 32px) / 6)', // subtracting px-4 container padding (16px left + 16px right)
                 left: '16px',
                 transform: `translateX(calc(${activeTabIdx} * 100%))`,
                 transition: 'transform 0.5s cubic-bezier(0.25, 1.45, 0.4, 1)' // GPU-accelerated liquid drop animation
@@ -1457,8 +1542,78 @@ export default function App() {
               <BarChart2 className="w-5 h-5" />
               <span className="text-[10px] font-bold">Tahlil</span>
             </button>
+
+            <button 
+              onClick={() => setActiveTab('habits')} 
+              className={`mobile-nav-btn flex flex-col items-center gap-1 flex-1 py-2 px-1 rounded-full transition-all ${activeTab === 'habits' ? 'active' : ''}`}
+            >
+              <Sparkles className="w-5 h-5" />
+              <span className="text-[10px] font-bold">Odatlar</span>
+            </button>
           </div>
         </div>
+
+      {/* PWA Install Instructions Modal */}
+      {isInstallModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="glass-panel w-full max-w-md p-6 rounded-3xl border border-white/15 space-y-6 animate-scale-up text-left" style={{ background: 'var(--panel-bg)', backdropFilter: 'blur(20px)' }}>
+            <div className="flex justify-between items-center pb-3 border-b border-white/5">
+              <h3 className="font-extrabold text-md text-purple-300 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-400" />
+                Ilovani o'rnatish qo'llanmasi
+              </h3>
+              <button 
+                onClick={() => setIsInstallModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-[var(--text-muted)] hover:text-white cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+            
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+              MoliyaManage ilovasini shaxsiy kompyuteringiz yoki mobil telefoningiz ekraniga mustaqil ilova qilib o'rnatib olishingiz mumkin. Bu sizga internet bo'lmaganda ham ilovadan foydalanish imkonini beradi.
+            </p>
+
+            <div className="space-y-4">
+              {/* Android / Chrome */}
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/5 space-y-2">
+                <h4 className="text-xs font-extrabold text-purple-300">🤖 Android va Google Chrome uchun:</h4>
+                <ol className="list-decimal pl-4 text-[11px] text-[var(--text-secondary)] space-y-1">
+                  <li>Brauzerning yuqori o'ng burchagidagi <strong>3 ta nuqta</strong> belgisini bosing.</li>
+                  <li>Ochilgan menyudan <strong>"Ilovani o'rnatish" (Install app)</strong> yoki <strong>"Ekran yuziga qo'shish" (Add to Home screen)</strong> bandini tanlang.</li>
+                  <li>O'rnatishni tasdiqlang.</li>
+                </ol>
+              </div>
+
+              {/* iOS / Safari */}
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/5 space-y-2">
+                <h4 className="text-xs font-extrabold text-purple-300">🍎 iOS va Safari (iPhone/iPad) uchun:</h4>
+                <ol className="list-decimal pl-4 text-[11px] text-[var(--text-secondary)] space-y-1">
+                  <li>Safari brauzerining pastki qismidagi <strong>"Ulashish" (Share)</strong> tugmasini bosing (o'rtasida yuqoriga yo'nalgan strelkasi bor kvadrat).</li>
+                  <li>Menyuni pastga aylantirib, <strong>"Ekran yuziga qo'shish" (Add to Home Screen)</strong> bandini bosing.</li>
+                  <li>Yuqori o'ng burchakdagi <strong>"Qo'shish" (Add)</strong> tugmasini bosing.</li>
+                </ol>
+              </div>
+
+              {/* Desktop Chrome */}
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/5 space-y-2">
+                <h4 className="text-xs font-extrabold text-purple-300">💻 Kompyuter (Chrome/Edge/Brave) uchun:</h4>
+                <ol className="list-decimal pl-4 text-[11px] text-[var(--text-secondary)] space-y-1">
+                  <li>Brauzerning URL manzil satridagi <strong>O'rnatish belgisini</strong> bosing (yoki 3 ta nuqtadan "Install" ni bosing).</li>
+                  <li>O'rnatishni tasdiqlang.</li>
+                </ol>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setIsInstallModalOpen(false)}
+              className="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md text-center"
+            >
+              Tushundim
+            </button>
+          </div>
+        </div>
+      )}
 
       </main>
     </div>

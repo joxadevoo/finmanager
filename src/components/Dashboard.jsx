@@ -167,7 +167,29 @@ export default function Dashboard({
         </div>
       </div>
 
-
+      {/* 22-year-old Worker Greeting & Habits CTA Banner */}
+      <div className="glass-panel p-6 rounded-3xl bg-gradient-to-r from-purple-500/10 via-indigo-500/5 to-transparent border border-purple-500/15 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-64 h-64 bg-purple-500/5 rounded-full filter blur-2xl pointer-events-none" />
+        <div className="space-y-1 text-left">
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-400 font-bold text-[9px] uppercase tracking-wider">
+              22 Yoshda Moliyaviy Intizom 🎯
+            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping" />
+          </div>
+          <h2 className="text-xl font-black text-[var(--text-primary)]">Moliya tartib va odat demakdir!</h2>
+          <p className="text-xs text-[var(--text-secondary)] max-w-xl">
+            Yoshlik davringizda daromadni to'g'ri boshqarish oltin qoidalarini amalda sinab ko'ring (50/30/20 qoidasi, 24 soat hissiy filtr, Xavfsizlik yostiqchasi).
+          </p>
+        </div>
+        <button 
+          onClick={() => setActiveTab('habits')}
+          className="px-5 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shrink-0 shadow-md flex items-center gap-2"
+        >
+          <span>Smart odatlarni boshlash</span>
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
 
       {/* Main KPI metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
