@@ -143,122 +143,40 @@ export default function Analytics({
         </div>
       </div>
 
-      {/* Donut Chart & Category breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* SVG Donut Chart */}
-        <div className="glass-panel p-6 flex flex-col items-center justify-center space-y-6">
-          <h3 className="text-lg font-bold text-[var(--text-primary)] self-start">Xarajatlar Diagrammasi</h3>
-          
-          {totalExpense > 0 ? (
-            <div className="relative w-64 h-64 flex items-center justify-center">
-              <svg viewBox="0 0 140 140" className="w-full h-full transform -rotate-90">
-                <circle 
-                  cx="70" 
-                  cy="70" 
-                  r={radius} 
-                  fill="transparent" 
-                  stroke="rgba(255,255,255,0.03)" 
-                  strokeWidth="16" 
-                />
-                {chartData.map((slice, index) => {
-                  const strokeDasharray = `${(slice.percentage / 100) * circumference} ${circumference}`;
-                  const strokeDashoffset = -((accumulatedPercentage / 100) * circumference);
-                  accumulatedPercentage += slice.percentage;
+      {/* Categories Details List (Full Width) */}
+      <div className="glass-panel p-6 space-y-6">
+        <h3 className="text-lg font-bold text-[var(--text-primary)]">Kategoriyalar bo'yicha ulush</h3>
 
-                  const isHovered = activeSlice === index;
-
-                  return (
-                    <circle
-                      key={slice.category}
-                      cx="70"
-                      cy="70"
-                      r={radius}
-                      fill="transparent"
-                      stroke={slice.color}
-                      strokeWidth={isHovered ? 20 : 16}
-                      strokeDasharray={strokeDasharray}
-                      strokeDashoffset={strokeDashoffset}
-                      strokeLinecap="round"
-                      className="cursor-pointer transition-all duration-300 ease-out"
-                      onMouseEnter={() => setActiveSlice(index)}
-                      onMouseLeave={() => setActiveSlice(null)}
-                      style={{
-                        transformOrigin: '70px 70px',
-                      }}
-                    />
-                  );
-                })}
-              </svg>
-              
-              {/* Inner Text overlay */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                {activeSlice !== null ? (
-                  <>
-                    <p className="text-xs text-[var(--text-secondary)] font-semibold uppercase tracking-wider">
-                      {chartData[activeSlice].name}
-                    </p>
-                    <p className="text-lg font-extrabold text-[var(--text-primary)] mt-1">
-                      {formatUZS(chartData[activeSlice].amount)}
-                    </p>
-                    <p className="text-xs font-bold text-[var(--text-secondary)] mt-0.5">
-                      {chartData[activeSlice].percentage.toFixed(1)}%
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-xs text-[var(--text-secondary)] font-semibold uppercase tracking-wider">Jami Chiqim</p>
-                    <p className="text-2xl font-black text-[var(--text-primary)] mt-1 tracking-tight">
-                      {formatUZS(totalExpense)}
-                    </p>
-                    <p className="text-[10px] text-[var(--text-muted)] mt-1">Diagrammada ko'rish uchun tanlang</p>
-                  </>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-[var(--text-muted)] space-y-2">
-              <TrendingDown className="w-12 h-12 stroke-1" />
-              <p className="text-sm">Ushbu davrda xarajatlar aniqlanmadi.</p>
-            </div>
-          )}
-        </div>
-
-        {/* Categories Details List */}
-        <div className="glass-panel p-6 space-y-6">
-          <h3 className="text-lg font-bold text-[var(--text-primary)]">Kategoriyalar bo'yicha ulush</h3>
-
-          <div className="space-y-4 max-h-[320px] overflow-y-auto pr-2">
-            {chartData.map((slice, index) => {
-              const isHovered = activeSlice === index;
-              return (
-                <div 
-                  key={slice.category}
-                  className={`p-3 rounded-xl border border-transparent transition-all flex items-center justify-between cursor-pointer ${
-                    isHovered ? 'bg-white/5 border-white/10' : 'hover:bg-white/[0.02]'
-                  }`}
-                  onMouseEnter={() => setActiveSlice(index)}
-                  onMouseLeave={() => setActiveSlice(null)}
-                >
-                  <div className="flex items-center gap-3">
-                    <span 
-                      className="w-3.5 h-3.5 rounded-full shrink-0" 
-                      style={{ backgroundColor: slice.color }}
-                    ></span>
-                    <div>
-                      <p className="font-semibold text-sm text-[var(--text-primary)]">{slice.name}</p>
-                      <p className="text-xs text-[var(--text-secondary)]">{slice.percentage.toFixed(1)}% ulush</p>
-                    </div>
+        <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+          {chartData.map((slice, index) => {
+            const isHovered = activeSlice === index;
+            return (
+              <div 
+                key={slice.category}
+                className={`p-3 rounded-xl border border-transparent transition-all flex items-center justify-between cursor-pointer ${
+                  isHovered ? 'bg-white/5 border-white/10' : 'hover:bg-white/[0.02]'
+                }`}
+                onMouseEnter={() => setActiveSlice(index)}
+                onMouseLeave={() => setActiveSlice(null)}
+              >
+                <div className="flex items-center gap-3">
+                  <span 
+                    className="w-3.5 h-3.5 rounded-full shrink-0" 
+                    style={{ backgroundColor: slice.color }}
+                  ></span>
+                  <div>
+                    <p className="font-semibold text-sm text-[var(--text-primary)]">{slice.name}</p>
+                    <p className="text-xs text-[var(--text-secondary)]">{slice.percentage.toFixed(1)}% ulush</p>
                   </div>
-
-                  <p className="font-bold text-sm text-[var(--text-primary)]">{formatUZS(slice.amount)}</p>
                 </div>
-              );
-            })}
-            {chartData.length === 0 && (
-              <p className="text-sm text-[var(--text-muted)] text-center py-12">Ma'lumotlar mavjud emas.</p>
-            )}
-          </div>
+
+                <p className="font-bold text-sm text-[var(--text-primary)]">{formatUZS(slice.amount)}</p>
+              </div>
+            );
+          })}
+          {chartData.length === 0 && (
+            <p className="text-sm text-[var(--text-muted)] text-center py-12">Ma'lumotlar mavjud emas.</p>
+          )}
         </div>
       </div>
     </div>
