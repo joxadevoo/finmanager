@@ -1028,12 +1028,21 @@ export default function App() {
 
               {/* Action Buttons */}
               {/* Action Buttons Grid Layout */}
-              <div className="grid grid-cols-2 gap-3.5 w-full max-w-[380px] pt-2" style={{ margin: isMobile ? '0 auto' : '0' }}>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', 
+                gap: '14px', 
+                width: '100%', 
+                maxWidth: '380px', 
+                paddingTop: '8px', 
+                margin: isMobile ? '0 auto' : '0' 
+              }}>
                 <button 
                   onClick={handleLogin}
                   className="flex items-center justify-center gap-2 font-bold uppercase tracking-wider cursor-pointer"
                   style={{
-                    padding: '14px 12px',
+                    padding: '0 12px',
+                    height: '48px',
                     background: 'rgba(var(--accent-rgb), 0.1)',
                     border: '1px solid rgba(var(--accent-rgb), 0.35)',
                     borderRadius: '50px',
@@ -1073,7 +1082,8 @@ export default function App() {
                   }}
                   className="btn-secondary"
                   style={{
-                    padding: '14px 12px',
+                    padding: '0 12px',
+                    height: '48px',
                     borderRadius: '50px',
                     fontSize: '0.72rem',
                     fontWeight: '600',
@@ -1094,7 +1104,8 @@ export default function App() {
                     style={{
                       gridColumn: 'span 2',
                       width: '100%',
-                      padding: '14px 24px',
+                      padding: '0 24px',
+                      height: '48px',
                       background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%)',
                       border: '1px solid rgba(168, 85, 247, 0.45)',
                       borderRadius: '50px',
