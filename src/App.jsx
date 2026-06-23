@@ -1163,7 +1163,7 @@ export default function App() {
           style={{
             maxWidth: '1200px',
             margin: '0 auto',
-            padding: '80px 24px',
+            padding: isMobile ? '40px 16px' : '80px 24px',
             width: '100%'
           }}
         >
@@ -1216,20 +1216,20 @@ export default function App() {
               }}
             >
               <div 
-                className="flex items-center justify-center text-blue-400"
+                className="flex items-center justify-center text-purple-400"
                 style={{
                   width: '48px',
                   height: '48px',
                   borderRadius: '12px',
-                  background: 'rgba(59, 130, 246, 0.12)',
-                  border: '1px solid rgba(59, 130, 246, 0.25)'
+                  background: 'rgba(139, 92, 246, 0.12)',
+                  border: '1px solid rgba(139, 92, 246, 0.25)'
                 }}
               >
-                <BarChart2 className="w-6 h-6" />
+                <Sparkles className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-[var(--text-primary)]">SVG Donut Chart Tahlil</h3>
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">Aqlli Moliya Odatlari</h3>
               <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                Tashqi og'ir kutubxonalarsiz, to'liq SVG elementlari asosida yaratilgan interaktiv va yorqin xarajatlar tahlili diagrammasi.
+                50/30/20 oltin qoidasi, xavfsizlik yostiqchasi kalkulyatori va hissiy xarajatlarni tiyuvchi 24 soatlik kutish filtri tizimi.
               </p>
             </div>
 
