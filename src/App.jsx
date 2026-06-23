@@ -1414,7 +1414,7 @@ export default function App() {
       </aside>
 
       {/* Main Container */}
-      <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden pb-20 lg:pb-0 gap-4">
+      <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden pb-0 gap-4">
         
         {/* Top Header / Notification Bar */}
         <header className="glass-panel p-3 px-6 flex items-center justify-between gap-4 rounded-full shrink-0">
@@ -1510,7 +1510,7 @@ export default function App() {
         </header>
 
         {/* View Section */}
-        <section className="flex-1 p-4 overflow-y-auto space-y-4 min-h-0">
+        <section className="flex-1 p-4 pb-24 lg:pb-4 overflow-y-auto space-y-4 min-h-0">
           {activeTab !== 'dashboard' && (
             <div className="flex">
               <button 
