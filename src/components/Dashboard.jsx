@@ -170,17 +170,7 @@ export default function Dashboard({
 
 
       {/* Main KPI metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="glass-panel p-6 relative overflow-hidden group">
-          <div className="absolute -right-4 -bottom-4 opacity-10 text-[var(--text-primary)] group-hover:scale-110 transition-transform duration-300">
-            <Wallet className="w-24 h-24" />
-          </div>
-          <p className="text-sm font-medium text-[var(--text-secondary)]">Umumiy Jamg'armalar (Aktivlar)</p>
-          <h2 className="text-2xl font-bold mt-2 tracking-tight">{formatUZS(totalAssets)}</h2>
-          <div className="mt-4 flex items-center text-xs text-[var(--text-muted)]">
-            Hamyonlar va kartalardagi qoldiqlar
-          </div>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
         <div className="glass-panel p-6 relative overflow-hidden group">
           <div className="absolute -right-4 -bottom-4 opacity-10 text-emerald-400 group-hover:scale-110 transition-transform duration-300">
