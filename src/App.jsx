@@ -415,6 +415,7 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        setLoadingAuth(true);
         await loadUserDataFromFirestore(user.uid);
         setCurrentUser(user);
       } else {
@@ -832,11 +833,21 @@ export default function App() {
 
   if (loadingAuth) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[var(--bg-gradient)]">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <TrendingUp className="w-16 h-16 text-purple-500 animate-pulse" />
-          <h2 className="text-xl font-bold text-[var(--text-primary)]">Yuklanmoqda...</h2>
-          <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
+      <div className="flex items-center justify-center min-h-screen bg-[var(--bg-gradient)]" style={{ fontFamily: "'Outfit', sans-serif" }}>
+        <div className="flex flex-col items-center gap-6 text-center max-w-sm px-6">
+          <div className="relative">
+            <div className="absolute inset-0 bg-purple-500/20 rounded-full filter blur-xl animate-pulse" />
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center text-white shadow-lg relative z-10 animate-bounce">
+              <Banknote className="w-10 h-10" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-extrabold text-[var(--text-primary)]">MMoliya tizimiga kirish</h2>
+            <p className="text-xs text-[var(--text-secondary)] leading-relaxed animate-pulse">
+              Moliyaviy ma'lumotlaringiz bulutli server bilan xavfsiz sinxronizatsiya qilinmoqda. Iltimos, kuting...
+            </p>
+          </div>
+          <div className="w-8 h-8 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
         </div>
       </div>
     );
