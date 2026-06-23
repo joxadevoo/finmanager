@@ -931,6 +931,9 @@ button.icon-btn:hover {
 }
 
 .mobile-nav-btn.active {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   color: var(--accent-primary) !important;
 }
 
