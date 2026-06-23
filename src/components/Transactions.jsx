@@ -360,8 +360,8 @@ export default function Transactions({
 
       {/* Add Transaction Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="glass-panel w-full max-w-md p-6 relative overflow-hidden animate-scale-up space-y-4">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="glass-panel w-full max-w-md p-6 relative overflow-hidden animate-scale-up space-y-4 my-auto">
             
             <div className="flex justify-between items-center pb-2 border-b border-white/5">
               <h3 className="text-xl font-bold">Yangi Amaliyot</h3>
@@ -421,7 +421,7 @@ export default function Transactions({
 
               {/* Accounts Logic based on Type */}
               {type === 'transfer' ? (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Kimdan (Jo'natuvchi)</label>
                     <select 
@@ -452,7 +452,7 @@ export default function Transactions({
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Hisob (Hamyon)</label>
                     <select 
