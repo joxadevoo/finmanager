@@ -1317,7 +1317,7 @@ export default function App() {
   const activeTabIdx = tabIndices[activeTab] ?? 0;
 
   return (
-    <div className="flex min-h-screen relative overflow-hidden">
+    <div className="flex h-screen w-screen relative overflow-hidden">
 
       
       {/* Sidebar - Navigation panel (Desktop only) */}
@@ -1414,10 +1414,10 @@ export default function App() {
       </aside>
 
       {/* Main Container */}
-      <main className="flex-1 flex flex-col min-w-0 pb-20 lg:pb-0">
+      <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden pb-20 lg:pb-0">
         
         {/* Top Header / Notification Bar */}
-        <header className="glass-panel m-4 p-3 px-6 flex items-center justify-between gap-4 rounded-full">
+        <header className="glass-panel m-4 p-3 px-6 flex items-center justify-between gap-4 rounded-full shrink-0">
           {/* Mobile Brand Title */}
           <div className="flex items-center gap-3 lg:hidden">
             <MMCurrencyIcon className="w-6 h-6 text-purple-500" />
@@ -1510,7 +1510,7 @@ export default function App() {
         </header>
 
         {/* View Section */}
-        <section className="flex-1 p-4 overflow-y-auto space-y-4">
+        <section className="flex-1 p-4 overflow-y-auto space-y-4 min-h-0">
           {activeTab !== 'dashboard' && (
             <div className="flex">
               <button 
