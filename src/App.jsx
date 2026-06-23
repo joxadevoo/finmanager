@@ -22,7 +22,7 @@ import {
 
 // Firebase Services
 import { db, auth, googleProvider } from './firebase';
-import { signInWithRedirect, signOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, collection, getDocs, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 
 // MM Currency Icon component for the logo
@@ -431,9 +431,20 @@ export default function App() {
 
   const handleLogin = async () => {
     try {
-      await signInWithRedirect(auth, googleProvider);
+      await signInWithPopup(auth, googleProvider);
     } catch (error) {
       console.error("Google login error:", error);
+      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+        try {
+          await signInWithRedirect(auth, googleProvider);
+        } catch (redirectError) {
+          console.error("Redirect login error:", redirectError);
+        }
+      } else if (error.code === 'auth/unauthorized-domain') {
+        alert("Xatolik: Ushbu domen ('" + window.location.hostname + "') Firebase Console'da ruxsat etilgan domenlar (Authorized domains) ro'yxatiga qo'shilmagan. Iltimos, Firebase Console -> Authentication -> Settings -> Authorized domains sahifasiga ushbu domenni qo'shing.");
+      } else {
+        alert("Tizimga kirishda xatolik yuz berdi: " + error.message);
+      }
     }
   };
 
