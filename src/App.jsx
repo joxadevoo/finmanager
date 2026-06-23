@@ -272,6 +272,16 @@ export default function App() {
     }
   };
 
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isMobile = windowWidth < 768;
+
   // --- Hash Routing Sync ---
   useEffect(() => {
     window.location.hash = `#/${activeTab}`;
@@ -877,14 +887,14 @@ export default function App() {
           className="w-full z-20"
           style={{
             maxWidth: '1200px',
-            margin: '24px auto 0 auto',
-            padding: '0 24px'
+            margin: isMobile ? '12px auto 0 auto' : '24px auto 0 auto',
+            padding: isMobile ? '0 12px' : '0 24px'
           }}
         >
           <div 
             className="glass-panel flex items-center justify-between"
             style={{
-              padding: '14px 28px',
+              padding: isMobile ? '10px 18px' : '14px 28px',
               borderRadius: '9999px',
               border: '1px solid var(--panel-border)',
               background: 'var(--panel-bg)',
@@ -977,14 +987,14 @@ export default function App() {
           style={{
             maxWidth: '1200px',
             margin: '0 auto',
-            padding: '60px 24px',
+            padding: isMobile ? '30px 16px' : '60px 24px',
             width: '100%'
           }}
         >
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center w-full">
             
             {/* Left Content Column */}
-            <div className="text-left space-y-6">
+            <div className="flex flex-col space-y-6" style={{ textAlign: isMobile ? 'center' : 'left', alignItems: isMobile ? 'center' : 'flex-start' }}>
               <div 
                 className="inline-flex items-center gap-2"
                 style={{
@@ -1017,7 +1027,7 @@ export default function App() {
               </p>
 
               {/* Action Buttons */}
-              <div className="flex flex-wrap gap-4 pt-2">
+              <div className="flex flex-wrap gap-4 pt-2" style={{ justifyContent: isMobile ? 'center' : 'flex-start', width: '100%' }}>
                 <button 
                   onClick={handleLogin}
                   className="flex items-center justify-center gap-3 font-bold uppercase tracking-wider cursor-pointer"
@@ -1066,7 +1076,10 @@ export default function App() {
                     fontSize: '0.85rem',
                     fontWeight: '600',
                     letterSpacing: '0.08em',
-                    textTransform: 'uppercase'
+                    textTransform: 'uppercase',
+                    width: isMobile ? '100%' : 'auto',
+                    maxWidth: isMobile ? '300px' : 'none',
+                    justifyContent: 'center'
                   }}
                 >
                   Imkoniyatlar
@@ -1112,13 +1125,13 @@ export default function App() {
               <div 
                 className="glass-card animate-scale-up"
                 style={{
-                  padding: '28px',
+                  padding: isMobile ? '16px' : '28px',
                   borderRadius: '24px',
                   border: '1px solid rgba(255, 255, 255, 0.12)',
                   background: 'rgba(255, 255, 255, 0.02)',
                   boxShadow: 'none',
                   width: '100%',
-                  maxWidth: '460px',
+                  maxWidth: '480px',
                   position: 'relative'
                 }}
               >
