@@ -233,7 +233,7 @@ import {
 export default function App() {
   const [activeTab, setActiveTab] = useState(() => {
     const hash = window.location.hash.replace('#/', '');
-    const validTabs = ['dashboard', 'transactions', 'budgets', 'goals', 'accounts', 'analytics', 'habits'];
+    const validTabs = ['dashboard', 'transactions', 'budgets', 'goals', 'accounts', 'habits'];
     return validTabs.includes(hash) ? hash : 'dashboard';
   });
   const [theme, setTheme] = useState(() => localStorage.getItem('fm_theme') || 'dark');
@@ -290,7 +290,7 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#/', '');
-      const validTabs = ['dashboard', 'transactions', 'budgets', 'goals', 'accounts', 'analytics', 'habits'];
+      const validTabs = ['dashboard', 'transactions', 'budgets', 'goals', 'accounts', 'habits'];
       if (validTabs.includes(hash)) {
         setActiveTab(hash);
       }
@@ -810,13 +810,7 @@ export default function App() {
             onTransferFunds={handleTransferFunds}
           />
         );
-      case 'analytics':
-        return (
-          <Analytics 
-            transactions={transactions}
-            accounts={accounts}
-          />
-        );
+
       case 'habits':
         return (
           <SmartHabits 
@@ -1322,8 +1316,7 @@ export default function App() {
     transactions: 1,
     budgets: 2,
     goals: 3,
-    analytics: 4,
-    habits: 5
+    habits: 4
   };
   const activeTabIdx = tabIndices[activeTab] ?? 0;
 
@@ -1398,13 +1391,7 @@ export default function App() {
               <Target className="w-5 h-5" />
               <span>Jamg'armalar</span>
             </button>
-            <button 
-              onClick={() => setActiveTab('analytics')} 
-              className={`w-full nav-link ${activeTab === 'analytics' ? 'active' : ''}`}
-            >
-              <BarChart2 className="w-5 h-5" />
-              <span>Moliya Tahlili</span>
-            </button>
+
             <button 
               onClick={() => setActiveTab('habits')} 
               className={`w-full nav-link ${activeTab === 'habits' ? 'active' : ''}`}
@@ -1545,7 +1532,7 @@ export default function App() {
             <div 
               className="mobile-nav-indicator"
               style={{
-                width: 'calc((100% - 32px) / 6)', // subtracting px-4 container padding (16px left + 16px right)
+                width: 'calc((100% - 32px) / 5)', // subtracting px-4 container padding (16px left + 16px right)
                 left: '16px',
                 transform: `translateX(calc(${activeTabIdx} * 100%))`,
                 transition: 'transform 0.5s cubic-bezier(0.25, 1.45, 0.4, 1)' // GPU-accelerated liquid drop animation
@@ -1582,14 +1569,6 @@ export default function App() {
             >
               <Target className="w-5 h-5" />
               <span className="text-[10px] font-bold">Maqsad</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab('analytics')} 
-              className={`mobile-nav-btn flex flex-col items-center gap-1 flex-1 py-2 px-1 rounded-full transition-all ${activeTab === 'analytics' ? 'active' : ''}`}
-            >
-              <BarChart2 className="w-5 h-5" />
-              <span className="text-[10px] font-bold">Tahlil</span>
             </button>
 
             <button 
