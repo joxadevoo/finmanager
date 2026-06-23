@@ -1317,11 +1317,11 @@ export default function App() {
   const activeTabIdx = tabIndices[activeTab] ?? 0;
 
   return (
-    <div className="flex h-screen w-screen relative overflow-hidden">
+    <div className="flex h-screen w-screen p-4 gap-4 relative overflow-hidden bg-[var(--bg-gradient)]" style={{ fontFamily: "'Outfit', sans-serif", color: 'var(--text-primary)' }}>
 
       
       {/* Sidebar - Navigation panel (Desktop only) */}
-      <aside className="hidden lg:flex flex-col w-72 glass-panel m-4 mr-0 p-6 shrink-0 justify-between">
+      <aside className="hidden lg:flex flex-col w-72 glass-panel p-6 shrink-0 justify-between">
         
         {/* Top brand */}
         <div className="space-y-8">
@@ -1414,10 +1414,10 @@ export default function App() {
       </aside>
 
       {/* Main Container */}
-      <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden pb-20 lg:pb-0">
+      <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden pb-20 lg:pb-0 gap-4">
         
         {/* Top Header / Notification Bar */}
-        <header className="glass-panel m-4 p-3 px-6 flex items-center justify-between gap-4 rounded-full shrink-0">
+        <header className="glass-panel p-3 px-6 flex items-center justify-between gap-4 rounded-full shrink-0">
           {/* Mobile Brand Title */}
           <div className="flex items-center gap-3 lg:hidden">
             <MMCurrencyIcon className="w-6 h-6 text-purple-500" />
