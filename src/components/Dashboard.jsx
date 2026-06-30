@@ -96,35 +96,186 @@ const getCategoryColor = (category, type) => {
 export default function Dashboard({ 
   transactions, 
   accounts, 
-  budgets, 
-  goals,
   setActiveTab,
   onOpenAddTransaction
 }) {
+  const [chartTab, setChartTab] = useState('combined');
+  const [timeFrame, setTimeFrame] = useState('monthly');
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const today = new Date();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = today.getFullYear();
+    return `${yyyy}-${mm}`;
+  });
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+  const [activeTooltip, setActiveTooltip] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-  // Calculate totals
-  const totalAssets = accounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
-  
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
+
+  const totalIncome = transactions
+    .filter(tx => tx.type === 'income')
+    .reduce((sum, tx) => sum + Number(tx.amount), 0);
+
+  const totalExpense = transactions
+    .filter(tx => tx.type === 'expense')
+    .reduce((sum, tx) => sum + Number(tx.amount), 0);
+
+  // Calculate totals (balance is simply Kirim - Chiqim)
+  const totalAssets = totalIncome - totalExpense;
 
   const monthlyTransactions = transactions.filter(tx => {
     const txDate = new Date(tx.date);
     return txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear;
   });
 
-  const monthlyIncome = monthlyTransactions
-    .filter(tx => tx.type === 'income')
-    .reduce((sum, tx) => sum + Number(tx.amount), 0);
-
   const monthlyExpense = monthlyTransactions
     .filter(tx => tx.type === 'expense')
     .reduce((sum, tx) => sum + Number(tx.amount), 0);
 
-  const netSavings = monthlyIncome - monthlyExpense;
-  const savingsRate = monthlyIncome > 0 ? ((netSavings / monthlyIncome) * 100).toFixed(0) : 0;
-  const recentTransactions = transactions.slice(0, 5);
+  // Group chart data based on timeFrame (daily: today, weekly: current week days, monthly: current month days)
+  const getChartData = () => {
+    const data = [];
+    const today = new Date();
+    const selYear = today.getFullYear();
+    const selMonth = today.getMonth(); // 0-indexed
+    const todayStr = today.toISOString().split('T')[0];
+
+    if (timeFrame === 'daily') {
+      // Show today's individual transactions as points
+      const todayTx = transactions.filter(tx => tx.date === todayStr);
+
+      if (todayTx.length === 0) {
+        data.push({ label: 'Bugun', fullLabel: 'Bugun amallar yo\'q', income: 0, expense: 0 });
+        data.push({ label: ' ', fullLabel: 'Bugun amallar yo\'q', income: 0, expense: 0 });
+      } else {
+        todayTx.forEach((tx, idx) => {
+          const categoryName = categoryNameMap[tx.category] || (tx.type === 'income' ? 'Kirim' : 'Chiqim');
+          data.push({
+            label: tx.notes ? (tx.notes.length > 8 ? tx.notes.slice(0, 8) + '...' : tx.notes) : categoryName,
+            fullLabel: `${categoryName}${tx.notes ? `: ${tx.notes}` : ''}`,
+            income: tx.type === 'income' ? Number(tx.amount) : 0,
+            expense: tx.type === 'expense' ? Number(tx.amount) : 0
+          });
+        });
+        if (data.length === 1) {
+          data.push({ ...data[0], label: data[0].label + ' ' });
+        }
+      }
+    } else if (timeFrame === 'weekly') {
+      // Days of the current week (Monday to Sunday)
+      const weekDays = ['Dush', 'Sesh', 'Chor', 'Pay', 'Jum', 'Shan', 'Yak'];
+      
+      const currentDay = today.getDay(); // 0 is Sunday, 1 is Monday, etc.
+      const diff = currentDay === 0 ? -6 : 1 - currentDay;
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() + diff);
+
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(startOfWeek);
+        d.setDate(startOfWeek.getDate() + i);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+
+        const dayTx = transactions.filter(tx => tx.date === dateStr);
+
+        const inc = dayTx.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + Number(tx.amount), 0);
+        const exp = dayTx.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + Number(tx.amount), 0);
+
+        data.push({
+          label: weekDays[i],
+          fullLabel: `${weekDays[i]} (${dd}.${mm})`,
+          income: inc,
+          expense: exp
+        });
+      }
+    } else if (timeFrame === 'monthly') {
+      // Days of the current month
+      const daysInMonth = new Date(selYear, selMonth + 1, 0).getDate();
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayTx = transactions.filter(tx => {
+          if (!tx.date) return false;
+          const parts = tx.date.split('-');
+          const txY = parseInt(parts[0], 10);
+          const txM = parseInt(parts[1], 10) - 1;
+          const txD = parseInt(parts[2], 10);
+          return txY === selYear && txM === selMonth && txD === day;
+        });
+
+        const inc = dayTx.filter(tx => tx.type === 'income').reduce((sum, tx) => sum + Number(tx.amount), 0);
+        const exp = dayTx.filter(tx => tx.type === 'expense').reduce((sum, tx) => sum + Number(tx.amount), 0);
+
+        data.push({
+          label: day % 5 === 0 || day === 1 || day === daysInMonth ? `${day}` : '',
+          fullLabel: `${day}-kun`,
+          income: inc,
+          expense: exp
+        });
+      }
+    }
+    return data;
+  };
+
+  // Group expenses by category for Donut chart
+  const expenseTransactions = transactions.filter(tx => tx.type === 'expense');
+  const totalExpenseSum = expenseTransactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
+
+  const categoryExpenses = [];
+  const grouped = {};
+  expenseTransactions.forEach(tx => {
+    grouped[tx.category] = (grouped[tx.category] || 0) + Number(tx.amount);
+  });
+
+  const categoryColors = {
+    food: '#fb7185',        // rose-400
+    transport: '#60a5fa',   // blue-400
+    utilities: '#fbbf24',   // amber-400
+    entertainment: '#c084fc', // purple-400
+    shopping: '#f472b6',    // pink-400
+    health: '#34d399',      // emerald-400
+    education: '#818cf8',   // indigo-400
+    other_exp: '#94a3b8'    // slate-400
+  };
+
+  Object.keys(grouped).forEach(cat => {
+    categoryExpenses.push({
+      category: cat,
+      name: categoryNameMap[cat] || cat,
+      amount: grouped[cat],
+      percentage: totalExpenseSum > 0 ? (grouped[cat] / totalExpenseSum) * 100 : 0,
+      color: categoryColors[cat] || '#94a3b8'
+    });
+  });
+
+  // Sort descending
+  categoryExpenses.sort((a, b) => b.amount - a.amount);
+
+  // SVG Donut calculation
+  let accumulatedPercent = 0;
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius; // ~251.32
+  
+  const donutSegments = categoryExpenses.map(item => {
+    const strokeLength = (item.percentage / 100) * circumference;
+    const strokeOffset = - (accumulatedPercent / 100) * circumference;
+    accumulatedPercent += item.percentage;
+    
+    return {
+      ...item,
+      strokeDasharray: `${strokeLength} ${circumference}`,
+      strokeDashoffset: strokeOffset
+    };
+  });
 
   // Format currency helper
   const formatUZS = (val) => {
@@ -140,26 +291,28 @@ export default function Dashboard({
   };
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in pb-44 md:pb-6">
       {/* Welcome Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Xush kelibsiz! 👋</h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
-            Bugun: {new Date().toLocaleDateString('uz-UZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          <h1 className="text-3xl font-extrabold tracking-tight tabular-nums">
+            {currentTime.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
+          </h1>
+          <p className="text-sm font-semibold text-[var(--text-secondary)] mt-1">
+            {currentTime.toLocaleDateString('uz-UZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
         <div className="flex gap-3">
           <button 
             onClick={() => onOpenAddTransaction('expense')} 
-            className="btn-danger flex items-center gap-2 rounded-xl"
+            className="btn-danger flex items-center gap-2 rounded-full"
           >
             <ArrowDownLeft className="w-4 h-4" />
             <span>Xarajat qo'shish</span>
           </button>
           <button 
             onClick={() => onOpenAddTransaction('income')} 
-            className="btn-success rounded-xl"
+            className="btn-success rounded-full"
           >
             <Plus className="w-4 h-4" />
             <span>Daromad qo'shish</span>
@@ -170,210 +323,436 @@ export default function Dashboard({
 
 
       {/* Main KPI metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <div className="glass-panel p-6 relative overflow-hidden group">
-          <div className="absolute -right-4 -bottom-4 opacity-10 text-emerald-400 group-hover:scale-110 transition-transform duration-300">
-            <ArrowUpRight className="w-24 h-24" />
-          </div>
-          <p className="text-sm font-medium text-[var(--text-secondary)]">Bu oydagi Daromad</p>
-          <h2 className="text-2xl font-bold mt-2 text-emerald-400 tracking-tight">+{formatUZS(monthlyIncome)}</h2>
-          <div className="mt-4 flex items-center text-xs text-emerald-400/80 font-medium">
-            <ArrowUpRight className="w-3.5 h-3.5 mr-1" />
-            Ushbu oydagi barcha tushumlar
-          </div>
-        </div>
-
-        <div className="glass-panel p-6 relative overflow-hidden group">
-          <div className="absolute -right-4 -bottom-4 opacity-10 text-rose-400 group-hover:scale-110 transition-transform duration-300">
-            <ArrowDownLeft className="w-24 h-24" />
-          </div>
-          <p className="text-sm font-medium text-[var(--text-secondary)]">Bu oydagi Xarajat</p>
-          <h2 className="text-2xl font-bold mt-2 text-rose-400 tracking-tight">-{formatUZS(monthlyExpense)}</h2>
-          <div className="mt-4 flex items-center text-xs text-rose-400/80 font-medium">
-            <ArrowDownLeft className="w-3.5 h-3.5 mr-1" />
-            Ushbu oydagi barcha chiqimlar
-          </div>
-        </div>
-
-        <div className="glass-panel p-6 relative overflow-hidden group">
+        {/* Card 1: Balance */}
+        <div className="glass-panel p-5 relative overflow-hidden group flex flex-col justify-center min-h-[140px]">
           <div className="absolute -right-4 -bottom-4 opacity-10 text-violet-400 group-hover:scale-110 transition-transform duration-300">
-            <TrendingUp className="w-24 h-24" />
+            <TrendingUp className="w-20 h-20" />
           </div>
-          <p className="text-sm font-medium text-[var(--text-secondary)]">Sof Oylik Tejash</p>
-          <h2 className={`text-2xl font-bold mt-2 tracking-tight ${netSavings >= 0 ? 'text-violet-400' : 'text-rose-400'}`}>
-            {netSavings >= 0 ? '+' : ''}{formatUZS(netSavings)}
-          </h2>
-          <div className="mt-4 flex items-center text-xs text-[var(--text-secondary)] font-medium">
-            <span className="badge badge-info text-[10px] py-0.5 px-2 mr-2">Tejash darajasi: {savingsRate}%</span>
+          <div>
+            <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Balans</p>
+            <h2 className="text-2xl md:text-3xl font-black mt-2 text-violet-400 tracking-tight">{formatUZS(totalAssets)}</h2>
           </div>
         </div>
-      </div>
-      {/* Main Grid Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Recent Transactions (2/3 width on desktop) */}
-        <div className="glass-panel p-6 lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold">So'nggi Amallar</h3>
-            <button 
-              onClick={() => setActiveTab('transactions')} 
-              className="text-xs font-semibold text-purple-400 flex items-center hover:underline py-1 px-3 gap-1"
-            >
-              Barchasi <ChevronRight className="w-4 h-4" />
-            </button>
+
+        {/* Card 2: Total Income and Expense in a single container */}
+        <div className="glass-panel p-5 grid grid-cols-2 gap-4 relative overflow-hidden min-h-[140px]">
+          
+          {/* Total Income section */}
+          <div className="flex flex-col justify-center border-r border-white/5 pr-4">
+            <div>
+              <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-xs font-semibold uppercase tracking-wider">Jami Kirim</span>
+              </div>
+              <h3 className="text-lg md:text-xl font-bold mt-2 text-emerald-400 tracking-tight">+{formatUZS(totalIncome)}</h3>
+            </div>
           </div>
 
-          {/* Responsive Transactions Feed List */}
-          <div className="flex flex-col gap-3">
-            {recentTransactions.map(tx => {
-              const isExpense = tx.type === 'expense';
-              const isTransfer = tx.type === 'transfer';
-              const isIncome = tx.type === 'income';
+          {/* Total Expense section */}
+          <div className="flex flex-col justify-center pl-4">
+            <div>
+              <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
+                <span className="w-2 h-2 rounded-full bg-rose-500" />
+                <span className="text-xs font-semibold uppercase tracking-wider">Jami Chiqim</span>
+              </div>
+              <h3 className="text-lg md:text-xl font-bold mt-2 text-rose-400 tracking-tight">-{formatUZS(totalExpense)}</h3>
+            </div>
+          </div>
 
-              const accountName = isTransfer
-                ? `${accounts.find(a => a.id === tx.fromAccountId)?.name || tx.fromAccountId} ➔ ${accounts.find(a => a.id === tx.toAccountId)?.name || tx.toAccountId}`
-                : (accounts.find(a => a.id === tx.accountId)?.name || tx.accountId);
+        </div>
 
-              const catColor = getCategoryColor(tx.category, tx.type);
+      </div>
+      {/* Chart Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        
+        {/* Left Column: Kirim-Chiqim Line Chart (3/5 width) */}
+        <div className="lg:col-span-3">
+          <div className="glass-panel p-4 md:p-6 space-y-6 flex flex-col justify-between h-full min-h-[380px]">
+            
+            {/* Chart Control Header */}
+            <div className="flex flex-col gap-4">
+              <h3 className="text-base md:text-lg font-bold">Kirim va Chiqim Tahlili</h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                {/* TimeFrame Switcher */}
+                <div className="flex bg-white/5 p-1.5 rounded-full w-full gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTimeFrame('daily')}
+                    className={`flex-1 text-center py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                      timeFrame === 'daily' ? 'bg-indigo-600 text-white shadow' : 'text-[var(--text-secondary)] hover:text-white'
+                    }`}
+                  >
+                    Kunlik
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTimeFrame('weekly')}
+                    className={`flex-1 text-center py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                      timeFrame === 'weekly' ? 'bg-indigo-600 text-white shadow' : 'text-[var(--text-secondary)] hover:text-white'
+                    }`}
+                  >
+                    Haftalik
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTimeFrame('monthly')}
+                    className={`flex-1 text-center py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                      timeFrame === 'monthly' ? 'bg-indigo-600 text-white shadow' : 'text-[var(--text-secondary)] hover:text-white'
+                    }`}
+                  >
+                    Oylik
+                  </button>
+                </div>
 
-              return (
-                <div key={tx.id} className="tx-item">
-                  <div className="flex items-center gap-3 min-w-0">
-                    {/* Icon Container */}
-                    <div className={`tx-icon-box ${catColor}`}>
-                      {categoryIconMap[tx.category] || <HelpCircle className="w-5 h-5" />}
-                    </div>
+                {/* Tabs Switcher */}
+                <div className="flex bg-white/5 p-1.5 rounded-full w-full gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setChartTab('combined')}
+                    className={`flex-1 text-center py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                      chartTab === 'combined' ? 'bg-purple-600 text-white shadow' : 'text-[var(--text-secondary)] hover:text-white'
+                    }`}
+                  >
+                    Umumiy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChartTab('income')}
+                    className={`flex-1 text-center py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                      chartTab === 'income' ? 'bg-emerald-600 text-white shadow' : 'text-[var(--text-secondary)] hover:text-white'
+                    }`}
+                  >
+                    Kirim
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChartTab('expense')}
+                    className={`flex-1 text-center py-2 text-xs font-bold rounded-full transition-all cursor-pointer ${
+                      chartTab === 'expense' ? 'bg-rose-600 text-white shadow' : 'text-[var(--text-secondary)] hover:text-white'
+                    }`}
+                  >
+                    Chiqim
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="relative pt-4 w-full overflow-hidden flex-1 flex items-center">
+              {/* SVG Area */}
+              <svg viewBox="0 0 500 200" className="w-full h-auto overflow-visible">
+                <style>{`
+                  .chart-line {
+                    transition: points 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
+                  }
+                  .chart-area {
+                    transition: d 0.6s cubic-bezier(0.4, 0, 0.2, 1), fill 0.3s ease;
+                  }
+                  .chart-dot {
+                    transition: r 0.25s cubic-bezier(0.4, 0, 0.2, 1), cx 0.6s cubic-bezier(0.4, 0, 0.2, 1), cy 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+                  }
+                `}</style>
+
+                {/* Gradients definitions */}
+                <defs>
+                  <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                  </linearGradient>
+                  <linearGradient id="expenseGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#f43f5e" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+
+                {/* Horizontal Grid Lines */}
+                <line x1="30" y1="30" x2="470" y2="30" stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
+                <line x1="30" y1="95" x2="470" y2="95" stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
+                <line x1="30" y1="160" x2="470" y2="160" stroke="rgba(255,255,255,0.1)" />
+
+                {(() => {
+                  const chartData = getChartData();
+                  const maxVal = Math.max(...chartData.map(d => Math.max(d.income, d.expense)), 10000);
+                  const N = chartData.length;
+                  
+                  const getX = (index) => 40 + (N > 1 ? index * (420 / (N - 1)) : 0);
+                  const getY = (val) => 160 - (val / maxVal) * 120;
+
+                  const incomePoints = chartData.map((d, i) => ({ x: getX(i), y: getY(d.income) }));
+                  const expensePoints = chartData.map((d, i) => ({ x: getX(i), y: getY(d.expense) }));
+
+                  const getCurvePath = (pts) => {
+                    if (pts.length === 0) return '';
+                    if (pts.length === 1) return `M ${pts[0].x} ${pts[0].y}`;
                     
-                    {/* Details */}
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-bold text-sm text-[var(--text-primary)]">
-                          {categoryNameMap[tx.category] || tx.category}
-                        </span>
-                        <span className="tx-account-badge">
-                          {accountName}
-                        </span>
-                      </div>
-                      <p className="tx-notes">
-                        {tx.notes || (isTransfer ? "Hisoblararo o'tkazma" : "Izoh yo'q")}
-                      </p>
-                    </div>
-                  </div>
+                    let dStr = `M ${pts[0].x} ${pts[0].y}`;
+                    const tension = 0.15;
+                    
+                    for (let i = 0; i < pts.length - 1; i++) {
+                      const p0 = pts[i];
+                      const p1 = pts[i + 1];
+                      
+                      const prev = pts[i - 1] || p0;
+                      const next = pts[i + 2] || p1;
+                      
+                      const cp1x = p0.x + (p1.x - prev.x) * tension;
+                      const cp1y = p0.y + (p1.y - prev.y) * tension;
+                      
+                      const cp2x = p1.x - (next.x - p0.x) * tension;
+                      const cp2y = p1.y - (next.y - p0.y) * tension;
+                      
+                      dStr += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`;
+                    }
+                    return dStr;
+                  };
 
-                  {/* Right side: Amount and date */}
-                  <div className="tx-right-side">
-                    <span className={`tx-amount ${isExpense ? 'text-rose-400' : isTransfer ? 'text-blue-400' : 'text-emerald-400'}`}>
-                      {isExpense ? '-' : isIncome ? '+' : ''}{formatUZS(tx.amount)}
-                    </span>
-                    <span className="tx-date">
-                      {tx.date}
+                  const incomeLinePath = getCurvePath(incomePoints);
+                  const expenseLinePath = getCurvePath(expensePoints);
+
+                  const incomeAreaPath = incomePoints.length > 0 
+                    ? `${incomeLinePath} L ${incomePoints[incomePoints.length - 1].x} 160 L ${incomePoints[0].x} 160 Z`
+                    : '';
+
+                  const expenseAreaPath = expensePoints.length > 0 
+                    ? `${expenseLinePath} L ${expensePoints[expensePoints.length - 1].x} 160 L ${expensePoints[0].x} 160 Z`
+                    : '';
+
+                  return (
+                    <>
+                      {/* Area under Income Line */}
+                      {(chartTab === 'combined' || chartTab === 'income') && chartData.length > 0 && (
+                        <path d={incomeAreaPath} fill="url(#incomeGrad)" className="chart-area" />
+                      )}
+
+                      {/* Area under Expense Line */}
+                      {(chartTab === 'combined' || chartTab === 'expense') && chartData.length > 0 && (
+                        <path d={expenseAreaPath} fill="url(#expenseGrad)" className="chart-area" />
+                      )}
+
+                      {/* Income Line */}
+                      {(chartTab === 'combined' || chartTab === 'income') && (
+                        <path
+                          d={incomeLinePath}
+                          fill="none"
+                          stroke="#10b981"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="chart-line"
+                        />
+                      )}
+
+                      {/* Expense Line */}
+                      {(chartTab === 'combined' || chartTab === 'expense') && (
+                        <path
+                          d={expenseLinePath}
+                          fill="none"
+                          stroke="#f43f5e"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="chart-line"
+                        />
+                      )}
+
+                      {/* Dots and Labels */}
+                      {chartData.map((d, i) => {
+                        const cx = getX(i);
+                        const cyIncome = getY(d.income);
+                        const cyExpense = getY(d.expense);
+                        const isHovered = hoveredIndex === i;
+
+                        return (
+                          <g key={i} className="pointer-events-none">
+                            {/* X-Axis labels */}
+                            <text
+                              x={cx}
+                              y="185"
+                              textAnchor="middle"
+                              fill="var(--text-muted)"
+                              className="text-[9px] font-bold tracking-tight"
+                            >
+                              {d.label}
+                            </text>
+
+                            {/* Income Dot */}
+                            {(chartTab === 'combined' || chartTab === 'income') && (
+                              <circle
+                                cx={cx}
+                                cy={cyIncome}
+                                r={isHovered ? 6 : (timeFrame === 'daily' ? 0 : 3.5)}
+                                className="fill-emerald-400 stroke-slate-900 stroke-2 chart-dot"
+                              />
+                            )}
+
+                            {/* Expense Dot */}
+                            {(chartTab === 'combined' || chartTab === 'expense') && (
+                              <circle
+                                cx={cx}
+                                cy={cyExpense}
+                                r={isHovered ? 6 : (timeFrame === 'daily' ? 0 : 3.5)}
+                                className="fill-rose-400 stroke-slate-900 stroke-2 chart-dot"
+                              />
+                            )}
+                          </g>
+                        );
+                      })}
+
+                      {/* Interactive hover zones */}
+                      {chartData.map((d, i) => {
+                        const cx = getX(i);
+                        const zoneWidth = N > 1 ? (420 / (N - 1)) : 420;
+                        
+                        return (
+                          <rect
+                            key={`zone-${i}`}
+                            x={cx - zoneWidth / 2}
+                            y="10"
+                            width={zoneWidth}
+                            height="160"
+                            fill="transparent"
+                            className="cursor-pointer"
+                            onMouseEnter={() => {
+                              setHoveredIndex(i);
+                              setActiveTooltip({
+                                x: cx,
+                                y: chartTab === 'combined'
+                                  ? Math.min(getY(d.income), getY(d.expense))
+                                  : (chartTab === 'income' ? getY(d.income) : getY(d.expense)),
+                                label: d.fullLabel || d.label,
+                                income: d.income,
+                                expense: d.expense
+                              });
+                            }}
+                            onMouseLeave={() => {
+                              setHoveredIndex(null);
+                              setActiveTooltip(null);
+                            }}
+                          />
+                        );
+                      })}
+                    </>
+                  );
+                })()}
+              </svg>
+
+              {/* Rich HTML Tooltip Overlay */}
+              {activeTooltip && (
+                <div 
+                  className="absolute pointer-events-none bg-slate-950/95 border border-white/10 text-white p-2.5 rounded-xl shadow-2xl text-[10px] z-30 flex flex-col gap-1 -translate-x-1/2 -translate-y-full transition-all duration-150"
+                  style={{ 
+                    left: `${(activeTooltip.x / 500) * 100}%`, 
+                    top: `${(activeTooltip.y / 200) * 100 - 4}%` 
+                  }}
+                >
+                  <span className="font-extrabold text-[var(--text-muted)] tracking-wider uppercase text-[8px]">{activeTooltip.label}</span>
+                  {chartTab !== 'expense' && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                      <span className="text-emerald-400 font-bold">Kirim: {formatUZS(activeTooltip.income)}</span>
+                    </div>
+                  )}
+                  {chartTab !== 'income' && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                      <span className="text-rose-400 font-bold">Chiqim: {formatUZS(activeTooltip.expense)}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {/* Chart Legend */}
+            <div className="flex justify-center gap-6 text-[10px] md:text-xs font-semibold pt-2">
+              {(chartTab === 'combined' || chartTab === 'income') && (
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-0.5 bg-emerald-500" />
+                  <span className="text-[var(--text-secondary)]">Daromad</span>
+                </div>
+              )}
+              {(chartTab === 'combined' || chartTab === 'expense') && (
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-0.5 bg-rose-500" />
+                  <span className="text-[var(--text-secondary)]">Xarajat</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+
+        {/* Right Column: Xarajatlar Tarkibi Donut Chart (2/5 width) */}
+        <div className="lg:col-span-2">
+          <div className="glass-panel p-4 md:p-6 space-y-6 flex flex-col justify-between h-full min-h-[380px]">
+            <h3 className="text-base md:text-lg font-bold">Xarajatlar Tarkibi</h3>
+            
+            {totalExpenseSum > 0 ? (
+              <div className="flex flex-col sm:flex-row items-center gap-6 justify-center">
+                {/* SVG Donut */}
+                <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
+                  <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="10" />
+                    {donutSegments.map((seg, idx) => (
+                      <circle
+                        key={idx}
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        fill="transparent"
+                        stroke={seg.color}
+                        strokeWidth="10"
+                        strokeDasharray={seg.strokeDasharray}
+                        strokeDashoffset={seg.strokeDashoffset}
+                        className="transition-all duration-300 hover:stroke-[12px] cursor-pointer"
+                        title={`${seg.name}: ${seg.percentage.toFixed(0)}%`}
+                      />
+                    ))}
+                  </svg>
+                  
+                  {/* Total Text */}
+                  <div className="absolute text-center flex flex-col justify-center items-center">
+                    <span className="text-[9px] uppercase font-bold tracking-wider text-[var(--text-muted)]">Jami</span>
+                    <span className="text-xs font-extrabold text-[var(--text-primary)] mt-0.5 whitespace-nowrap">
+                      {formatUZS(totalExpenseSum)}
                     </span>
                   </div>
                 </div>
-              );
-            })}
-            {recentTransactions.length === 0 && (
-              <div className="text-center py-10 text-[var(--text-muted)]">
-                <Sparkles className="w-8 h-8 mx-auto opacity-20 mb-2" />
-                <p className="text-sm">Hozircha hech qanday tranzaksiya mavjud emas</p>
+
+                {/* Legend list */}
+                <div className="flex-1 space-y-2.5 w-full">
+                  {categoryExpenses.slice(0, 5).map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                        <span className="font-semibold text-[var(--text-secondary)] truncate">{item.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 pl-2">
+                        <span className="font-bold text-[var(--text-primary)]">{item.percentage.toFixed(0)}%</span>
+                        <span className="text-[10px] text-[var(--text-muted)]">{formatUZS(item.amount)}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {categoryExpenses.length > 5 && (
+                    <p className="text-[10px] text-[var(--text-muted)] text-right italic font-medium">
+                      + yana {categoryExpenses.length - 5} ta
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-3">
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-[var(--text-muted)]">
+                  <TrendingUp className="w-8 h-8 opacity-30" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[var(--text-secondary)]">Xarajatlar yo'q</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-1">Ushbu oydagi xarajatlar tahlili uchun avval biror xarajat tranzaksiyasini kiriting.</p>
+                </div>
               </div>
             )}
           </div>
-        </div>
-
-        {/* Right Column: Stack of Goals and Budgets (1/3 width on desktop) */}
-        <div className="space-y-8 flex flex-col">
-          
-          {/* Target Goals Summary */}
-          <div className="glass-panel p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold">Jamg'arma Maqsadlari</h3>
-              <button 
-                onClick={() => setActiveTab('goals')} 
-                className="text-xs font-semibold text-purple-400 flex items-center hover:underline py-1 px-3 gap-1"
-              >
-                Barchasi <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {goals.slice(0, 3).map(goal => {
-                const progress = Math.min(((goal.current / goal.target) * 100), 100).toFixed(0);
-                return (
-                  <div key={goal.id} className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-semibold text-sm">{goal.name}</span>
-                      <span className="text-xs text-[var(--text-secondary)]">{progress}% ({formatUZS(goal.current)})</span>
-                    </div>
-                    <div className="w-full bg-[rgba(255,255,255,0.05)] light-theme:bg-slate-200 h-2 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full bg-gradient-to-r ${goal.color} rounded-full transition-all duration-1000`}
-                        style={{ width: `${progress}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                );
-              })}
-              {goals.length === 0 && (
-                <p className="text-sm text-[var(--text-muted)] text-center py-6">Maqsadlar yo'q</p>
-              )}
-            </div>
-          </div>
-
-          {/* Budgets Progress Overview */}
-          <div className="glass-panel p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold">Budjet Nazorati</h3>
-              <button 
-                onClick={() => setActiveTab('budgets')} 
-                className="text-xs font-semibold text-purple-400 flex items-center hover:underline py-1 px-3 gap-1"
-              >
-                Barchasi <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {budgets.slice(0, 4).map(b => {
-                const spentPercent = ((b.spent / b.limit) * 100);
-                const colorClass = spentPercent > 100 
-                  ? 'bg-rose-500' 
-                  : spentPercent > 85 
-                    ? 'bg-amber-500' 
-                    : 'bg-emerald-500';
-
-                const categoryNameMap = {
-                  food: 'Oziq-ovqat',
-                  transport: 'Transport',
-                  utilities: 'Kommunallar',
-                  shopping: 'Xaridlar',
-                  entertainment: 'Hordiq',
-                  health: 'Sog\'liq'
-                };
-
-                return (
-                  <div key={b.category} className="space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="font-semibold">{categoryNameMap[b.category] || b.category}</span>
-                      <span className="text-[var(--text-secondary)]">
-                        {formatUZS(b.spent)} / {formatUZS(b.limit)}
-                      </span>
-                    </div>
-                    <div className="w-full bg-[rgba(255,255,255,0.05)] light-theme:bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full ${colorClass} rounded-full transition-all duration-1000`}
-                        style={{ width: `${Math.min(spentPercent, 100)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                );
-              })}
-              {budgets.length === 0 && (
-                <p className="text-sm text-[var(--text-muted)] text-center py-6">Budjetlar o'rnatilmagan</p>
-              )}
-            </div>
-          </div>
-
         </div>
 
       </div>

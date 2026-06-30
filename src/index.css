@@ -549,10 +549,6 @@ input:focus, select:focus, textarea:focus {
 .pt-6 { padding-top: 24px !important; }
 .pb-2 { padding-bottom: 8px !important; }
 .pb-20 { padding-bottom: 80px !important; }
-.pl-10 { padding-left: 40px !important; }
-.pr-4 { padding-right: 16px !important; }
-.pr-2 { padding-right: 8px !important; }
-
 .p-1 { padding: 4px !important; }
 .p-2 { padding: 8px !important; }
 .p-3 { padding: 12px !important; }
@@ -567,6 +563,15 @@ input:focus, select:focus, textarea:focus {
 .px-3 { padding-left: 12px !important; padding-right: 12px !important; }
 .px-4 { padding-left: 16px !important; padding-right: 16px !important; }
 .px-5 { padding-left: 20px !important; padding-right: 20px !important; }
+
+.pl-10 { padding-left: 40px !important; }
+.pl-11 { padding-left: 44px !important; }
+.pl-14 { padding-left: 56px !important; }
+.pl-2 { padding-left: 8px !important; }
+.pl-4 { padding-left: 16px !important; }
+.pr-4 { padding-right: 16px !important; }
+.pr-10 { padding-right: 40px !important; }
+.pr-2 { padding-right: 8px !important; }
 
 .m-4 { margin: 12px !important; /* Mobile default */ }
 .mr-0 { margin-right: 0px !important; }
@@ -654,6 +659,7 @@ input:focus, select:focus, textarea:focus {
 .z-40 { z-index: 40 !important; }
 .z-50 { z-index: 50 !important; }
 .top-10 { top: 40px !important; }
+.top-1\/2 { top: 50% !important; }
 .-right-4 { right: -16px !important; }
 .-bottom-4 { bottom: -16px !important; }
 .transform { transform: translate(0, 0); }
@@ -661,6 +667,7 @@ input:focus, select:focus, textarea:focus {
 .translate-y-3 { transform: translateY(12px) !important; }
 .translate-x-4 { transform: translateX(16px) !important; }
 .translate-y-4 { transform: translateY(16px) !important; }
+.-translate-y-1\/2 { transform: translateY(-50%) !important; }
 
 /* Interactive Scales */
 .group:hover .group-hover\:scale-110 { transform: scale(1.1) !important; }
@@ -716,6 +723,22 @@ input:focus, select:focus, textarea:focus {
 .text-indigo-400 { color: var(--accent-secondary) !important; }
 .text-pink-400 { color: #f472b6 !important; }
 .text-slate-400 { color: #94a3b8 !important; }
+.bg-rose-400 { background-color: #fb7185 !important; }
+.bg-emerald-400 { background-color: #34d399 !important; }
+.bg-purple-400 { background-color: var(--accent-primary) !important; }
+.bg-blue-400 { background-color: #60a5fa !important; }
+.bg-amber-400 { background-color: #fbbf24 !important; }
+.bg-violet-400 { background-color: var(--accent-primary) !important; }
+.bg-indigo-400 { background-color: var(--accent-secondary) !important; }
+.bg-pink-400 { background-color: #f472b6 !important; }
+.bg-slate-400 { background-color: #94a3b8 !important; }
+.bg-teal-400 { background-color: #2dd4bf !important; }
+
+.bg-violet-500 { background-color: var(--accent-primary) !important; }
+.bg-indigo-500 { background-color: var(--accent-secondary) !important; }
+.bg-pink-500 { background-color: #ec4899 !important; }
+.bg-slate-500 { background-color: #64748b !important; }
+.bg-teal-500 { background-color: #14b8a6 !important; }
 
 .bg-emerald-500\/20 { background-color: rgba(16, 185, 129, 0.2) !important; }
 .bg-rose-500\/20 { background-color: rgba(244, 63, 94, 0.2) !important; }
@@ -790,8 +813,18 @@ input:focus, select:focus, textarea:focus {
 .hover\:bg-white\/10:hover {
   background-color: rgba(255, 255, 255, 0.1) !important;
 }
-.hover\:bg-white\/10:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
+
+.light-theme .bg-white\/5 {
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+.light-theme .bg-white\/10 {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+}
+.light-theme .hover\:bg-white\/5:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+.light-theme .hover\:bg-white\/10:hover {
+  background-color: rgba(0, 0, 0, 0.08) !important;
 }
 
 /* Custom Transactions Feed Styling */
@@ -944,7 +977,6 @@ button.icon-btn:hover {
   top: 6px !important;
   bottom: 6px !important;
   background: rgba(var(--accent-rgb), 0.16) !important;
-  border: 1px solid rgba(var(--accent-rgb), 0.35) !important;
   border-radius: 9999px !important;
   pointer-events: none !important;
   z-index: 5 !important;
@@ -952,9 +984,9 @@ button.icon-btn:hover {
 
 .mobile-nav-container {
   position: fixed !important;
-  bottom: 12px !important;
-  left: 12px !important;
-  right: 12px !important;
+  bottom: 16px !important;
+  left: 24px !important;
+  right: 24px !important;
   z-index: 40 !important;
 }
 
@@ -963,6 +995,7 @@ button.icon-btn:hover {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  border-radius: 9999px !important;
 }
 
 /* ==========================================================================
@@ -1015,5 +1048,16 @@ button.icon-btn:hover {
 
 .animate-pulse-live {
   animation: pulseGlow 2s infinite ease-in-out;
+}
+
+/* Enforce scrollable clearance for bottom mobile navigation */
+.main-content {
+  padding-bottom: 144px !important;
+}
+
+@media (min-width: 1024px) {
+  .main-content {
+    padding-bottom: 16px !important;
+  }
 }
 

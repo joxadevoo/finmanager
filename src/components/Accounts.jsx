@@ -13,7 +13,7 @@ export default function Accounts({
   // Add Account Form State
   const [name, setName] = useState('');
   const [balance, setBalance] = useState('');
-  const [type, setType] = useState('Card');
+  const [type, setType] = useState('Savings');
   const [color, setColor] = useState('from-violet-600 to-indigo-600');
 
   // Transfer Form State
@@ -62,7 +62,7 @@ export default function Accounts({
   const resetAddForm = () => {
     setName('');
     setBalance('');
-    setType('Card');
+    setType('Savings');
     setColor('from-violet-600 to-indigo-600');
   };
 
@@ -101,15 +101,16 @@ export default function Accounts({
     { value: 'from-slate-600 to-slate-800', name: 'To\'q kulrang / Grafit' }
   ];
 
-  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+  const filteredAccounts = accounts.filter(acc => acc.type !== 'Card');
+  const totalBalance = filteredAccounts.reduce((sum, acc) => sum + acc.balance, 0);
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Hisoblar & Hamyonlar</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight">Jamg'arma va Investitsiyalar</h1>
           <p className="text-sm text-[var(--text-secondary)] mt-1">
-            Barcha bank kartalari, naqd hamyonlar va omonat hisoblaringizni boshqarish.
+            Barcha omonat va investitsiya hisoblaringizni boshqarish.
           </p>
         </div>
         
@@ -136,7 +137,7 @@ export default function Accounts({
 
       {/* Account Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {accounts.map(acc => {
+        {filteredAccounts.map(acc => {
           const share = totalBalance > 0 ? ((acc.balance / totalBalance) * 100).toFixed(0) : 0;
           return (
             <div 
@@ -240,9 +241,9 @@ export default function Accounts({
                     onChange={(e) => setType(e.target.value)}
                     className="w-full"
                   >
-                    <option value="Card">Bank kartasi (Card)</option>
-                    <option value="Cash">Naqd pul (Cash)</option>
                     <option value="Savings">Jamg'arma / Omonat (Savings)</option>
+                    <option value="Investment">Investitsiya (Investment)</option>
+                    <option value="Cash">Naqd pul (Cash)</option>
                   </select>
                 </div>
               </div>

@@ -1,27 +1,11 @@
 export const initialAccounts = [
   {
-    id: 'card',
-    name: 'Plastik Karta (Uzcard/Humoy)',
-    balance: 14500000,
+    id: 'default',
+    name: 'Hisob',
+    balance: 0,
     color: 'from-violet-600 to-indigo-600',
     icon: 'credit-card',
     type: 'Card'
-  },
-  {
-    id: 'cash',
-    name: 'Naqd Pullar',
-    balance: 3200000,
-    color: 'from-emerald-500 to-teal-600',
-    icon: 'banknote',
-    type: 'Cash'
-  },
-  {
-    id: 'savings',
-    name: 'Omonat (Jamg\'arma)',
-    balance: 25000000,
-    color: 'from-amber-500 to-orange-600',
-    icon: 'wallet',
-    type: 'Savings'
   }
 ];
 
@@ -45,117 +29,8 @@ export const initialCategories = {
   ]
 };
 
-export const initialTransactions = [
-  {
-    id: 'tx-1',
-    type: 'income',
-    amount: 8500000,
-    category: 'salary',
-    date: '2026-06-12',
-    accountId: 'card',
-    notes: 'May oyi uchun asosiy oylik ish haqi',
-  },
-  {
-    id: 'tx-2',
-    type: 'expense',
-    amount: 450000,
-    category: 'food',
-    date: '2026-06-12',
-    accountId: 'card',
-    notes: 'Korzinka.uz supermarket xaridi',
-  },
-  {
-    id: 'tx-3',
-    type: 'expense',
-    amount: 120000,
-    category: 'transport',
-    date: '2026-06-11',
-    accountId: 'cash',
-    notes: 'Yandex Taxi va benzin xarajati',
-  },
-  {
-    id: 'tx-4',
-    type: 'expense',
-    amount: 350000,
-    category: 'utilities',
-    date: '2026-06-10',
-    accountId: 'card',
-    notes: 'Elektr energiyasi va internet to\'lovi',
-  },
-  {
-    id: 'tx-5',
-    type: 'income',
-    amount: 1800000,
-    category: 'freelance',
-    date: '2026-06-09',
-    accountId: 'card',
-    notes: 'Telegram bot dasturlash xizmati uchun',
-  },
-  {
-    id: 'tx-6',
-    type: 'expense',
-    amount: 1200000,
-    category: 'shopping',
-    date: '2026-06-08',
-    accountId: 'card',
-    notes: 'Yozgi kiyim-bosh xarid qilish',
-  },
-  {
-    id: 'tx-7',
-    type: 'expense',
-    amount: 250000,
-    category: 'health',
-    date: '2026-06-07',
-    accountId: 'cash',
-    notes: 'Dorixona va shifokor ko\'rigi',
-  },
-  {
-    id: 'tx-8',
-    type: 'transfer',
-    amount: 1500000,
-    fromAccountId: 'card',
-    toAccountId: 'savings',
-    category: 'savings',
-    date: '2026-06-05',
-    notes: 'Omonat hisobini to\'ldirish (Jamg\'arma)',
-  }
-];
+export const initialTransactions = [];
 
-export const initialBudgets = [
-  { category: 'food', limit: 3000000, spent: 1450000 },
-  { category: 'transport', limit: 1000000, spent: 480000 },
-  { category: 'utilities', limit: 800000, spent: 350000 },
-  { category: 'shopping', limit: 2500000, spent: 1200000 },
-  { category: 'entertainment', limit: 1500000, spent: 650000 },
-  { category: 'health', limit: 1000000, spent: 250000 }
-];
-
-export const initialGoals = [
-  {
-    id: 'goal-1',
-    name: 'MacBook Pro M3 Pro',
-    target: 28000000,
-    current: 18000000,
-    deadline: '2026-10-31',
-    color: 'from-purple-500 to-indigo-500'
-  },
-  {
-    id: 'goal-2',
-    name: 'Sayohat (Antalya)',
-    target: 15000000,
-    current: 7000000,
-    deadline: '2026-08-15',
-    color: 'from-cyan-500 to-blue-500'
-  },
-  {
-    id: 'goal-3',
-    name: 'Favqulodda Hamyon (Piyoda)',
-    target: 10000000,
-    current: 5000000,
-    deadline: '2026-12-31',
-    color: 'from-emerald-500 to-teal-500'
-  }
-];
 
 export const financialTips = [
   "Daromadingizning kamida 10-20% qismini omonat yoki investitsiyalarga yo'naltiring.",

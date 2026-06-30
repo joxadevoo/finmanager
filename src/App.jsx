@@ -44,6 +44,17 @@ const MMCurrencyIcon = ({ className = "w-6 h-6", style = {} }) => (
   </svg>
 );
 
+const getCatColor = (catColor) => {
+  if (!catColor) return 'bg-purple-500';
+  if (catColor.includes('bg-')) {
+    const match = catColor.match(/bg-([a-z]+)-/);
+    const color = match ? match[1] : 'purple';
+    return `bg-${color}-500`;
+  }
+  return `bg-${catColor}-500`;
+};
+
+
 // Interactive Savings Simulator for the landing page hero section
 const SavingsSimulator = ({ theme }) => {
   const [monthly, setMonthly] = useState(1000000); // 1,000,000 UZS
@@ -215,25 +226,22 @@ const SavingsSimulator = ({ theme }) => {
 // Subcomponents
 import Dashboard from './components/Dashboard';
 import Transactions from './components/Transactions';
-import Budgets from './components/Budgets';
-import Goals from './components/Goals';
 import Accounts from './components/Accounts';
 import Analytics from './components/Analytics';
-import SmartHabits from './components/SmartHabits';
+import TransactionModal from './components/TransactionModal';
 
 // Initial Mock Data
 import { 
   initialAccounts, 
-  initialTransactions, 
-  initialBudgets, 
-  initialGoals 
+  initialTransactions,
+  initialCategories
 } from './data/mockData';
 
 
 export default function App() {
   const [activeTab, setActiveTab] = useState(() => {
     const hash = window.location.hash.replace('#/', '');
-    const validTabs = ['dashboard', 'transactions', 'budgets', 'goals', 'accounts', 'habits'];
+    const validTabs = ['dashboard', 'transactions', 'accounts', 'settings'];
     return validTabs.includes(hash) ? hash : 'dashboard';
   });
   const [theme, setTheme] = useState(() => localStorage.getItem('fm_theme') || 'dark');
@@ -290,7 +298,7 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#/', '');
-      const validTabs = ['dashboard', 'transactions', 'budgets', 'goals', 'accounts', 'habits'];
+      const validTabs = ['dashboard', 'transactions', 'accounts', 'settings'];
       if (validTabs.includes(hash)) {
         setActiveTab(hash);
       }
@@ -307,8 +315,49 @@ export default function App() {
   // --- App States ---
   const [accounts, setAccounts] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [budgets, setBudgets] = useState(initialBudgets);
-  const [goals, setGoals] = useState([]);
+  const [isTxModalOpen, setIsTxModalOpen] = useState(false);
+  const [txModalType, setTxModalType] = useState('expense');
+
+  // --- Category States ---
+  const [categories, setCategories] = useState(() => {
+    const saved = localStorage.getItem('finance_categories');
+    return saved ? JSON.parse(saved) : initialCategories;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('finance_categories', JSON.stringify(categories));
+  }, [categories]);
+
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatType, setNewCatType] = useState('expense');
+  const [newCatColor, setNewCatColor] = useState('rose');
+
+  const handleAddCategoryForm = (e) => {
+    e.preventDefault();
+    if (!newCatName.trim()) return;
+    
+    const newId = 'cat-' + Date.now();
+    const newCategory = {
+      id: newId,
+      name: newCatName.trim(),
+      color: newCatColor,
+      icon: 'FolderOpen'
+    };
+
+    setCategories(prev => ({
+      ...prev,
+      [newCatType]: [...prev[newCatType], newCategory]
+    }));
+
+    setNewCatName('');
+  };
+
+  const handleRemoveCategory = (type, catId) => {
+    setCategories(prev => ({
+      ...prev,
+      [type]: prev[type].filter(c => c.id !== catId)
+    }));
+  };
 
   // --- Theme Sync ---
   useEffect(() => {
@@ -342,33 +391,51 @@ export default function App() {
       });
       loadedTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-      // 3. Load Budgets
-      const budgetsRef = collection(db, "users", userId, "budgets");
-      const budgetsSnap = await getDocs(budgetsRef);
-      let loadedBudgets = [];
-      budgetsSnap.forEach(doc => {
-        loadedBudgets.push({ ...doc.data(), category: doc.id });
-      });
-
-      // 4. Load Goals
-      const goalsRef = collection(db, "users", userId, "goals");
-      const goalsSnap = await getDocs(goalsRef);
-      let loadedGoals = [];
-      goalsSnap.forEach(doc => {
-        loadedGoals.push({ ...doc.data(), id: doc.id });
-      });
+      // Check if old mock data is present in database (using a check for one of the old account IDs like 'card', 'cash', 'savings')
+      const hasOldMockData = loadedAccounts.some(acc => ['card', 'cash', 'savings'].includes(acc.id));
+      if (hasOldMockData) {
+        console.log("Purging old mock data to reset balance to 0...");
+        const batch = writeBatch(db);
+        
+        // Delete all old transactions
+        loadedTransactions.forEach(tx => {
+          const docRef = doc(db, "users", userId, "transactions", tx.id);
+          batch.delete(docRef);
+        });
+        
+        // Delete all old accounts
+        loadedAccounts.forEach(acc => {
+          const docRef = doc(db, "users", userId, "accounts", acc.id);
+          batch.delete(docRef);
+        });
+        
+        // Create one default account with 0 balance
+        const defaultAcc = {
+          id: 'default',
+          name: 'Hisob',
+          balance: 0,
+          color: 'from-violet-600 to-indigo-600',
+          icon: 'credit-card',
+          type: 'Card'
+        };
+        const defaultAccRef = doc(db, "users", userId, "accounts", defaultAcc.id);
+        batch.set(defaultAccRef, defaultAcc);
+        
+        await batch.commit();
+        
+        loadedAccounts = [defaultAcc];
+        loadedTransactions = [];
+        localStorage.removeItem('fm_transactions');
+        localStorage.removeItem('fm_accounts');
+      }
 
       if (loadedAccounts.length === 0) {
         // First-time signup / empty database. Let's seed initial data
         const savedAccounts = localStorage.getItem('fm_accounts');
         const savedTransactions = localStorage.getItem('fm_transactions');
-        const savedBudgets = localStorage.getItem('fm_budgets');
-        const savedGoals = localStorage.getItem('fm_goals');
 
         const initAccs = savedAccounts ? JSON.parse(savedAccounts) : initialAccounts;
         const initTxs = savedTransactions ? JSON.parse(savedTransactions) : initialTransactions;
-        const initBuds = savedBudgets ? JSON.parse(savedBudgets) : initialBudgets;
-        const initGls = savedGoals ? JSON.parse(savedGoals) : initialGoals;
 
         const batch = writeBatch(db);
 
@@ -382,27 +449,13 @@ export default function App() {
           batch.set(docRef, tx);
         });
 
-        initBuds.forEach(bud => {
-          const docRef = doc(db, "users", userId, "budgets", bud.category);
-          batch.set(docRef, bud);
-        });
-
-        initGls.forEach(goal => {
-          const docRef = doc(db, "users", userId, "goals", goal.id);
-          batch.set(docRef, goal);
-        });
-
         await batch.commit();
 
         setAccounts(initAccs);
         setTransactions(initTxs);
-        setBudgets(initBuds);
-        setGoals(initGls);
       } else {
         setAccounts(loadedAccounts);
         setTransactions(loadedTransactions);
-        setBudgets(loadedBudgets.length > 0 ? loadedBudgets : initialBudgets);
-        setGoals(loadedGoals);
       }
     } catch (error) {
       console.error("Firestore initialization error:", error);
@@ -422,8 +475,6 @@ export default function App() {
         setCurrentUser(null);
         setAccounts([]);
         setTransactions([]);
-        setBudgets(initialBudgets);
-        setGoals([]);
       }
       setLoadingAuth(false);
     });
@@ -457,53 +508,7 @@ export default function App() {
     }
   };
 
-  // --- Dynamic Budget Syncing ---
-  // Re-calculate spent amount dynamically whenever transactions change
-  useEffect(() => {
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
 
-    const monthlyExpenses = transactions.filter(tx => {
-      const txDate = new Date(tx.date);
-      return tx.type === 'expense' && 
-             txDate.getMonth() === currentMonth && 
-             txDate.getFullYear() === currentYear;
-    });
-
-    setBudgets(prevBudgets => {
-      const updated = prevBudgets.map(b => {
-        const spent = monthlyExpenses
-          .filter(tx => tx.category === b.category)
-          .reduce((sum, tx) => sum + tx.amount, 0);
-        return { ...b, spent };
-      });
-      
-      // Check for over-budget alerts
-      const alerts = [];
-      updated.forEach(b => {
-        if (b.spent > b.limit) {
-          const categoryNameMap = {
-            food: 'Oziq-ovqat',
-            transport: 'Transport',
-            utilities: 'Kommunal to\'lovlar',
-            shopping: 'Xaridlar',
-            entertainment: 'Hordiq',
-            health: 'Sog\'liq',
-            education: 'Ta\'lim',
-            other_exp: 'Boshqa xarajatlar'
-          };
-          alerts.push({
-            id: `alert-${b.category}`,
-            message: `"${categoryNameMap[b.category] || b.category}" budjet limiti oshib ketdi!`,
-            type: 'warning'
-          });
-        }
-      });
-      setNotifications(alerts);
-
-      return updated;
-    });
-  }, [transactions]);
 
   // --- Add Transaction ---
   const handleAddTransaction = async (newTx) => {
@@ -594,99 +599,9 @@ export default function App() {
     }
   };
 
-  // --- Update Budget Limit ---
-  const handleUpdateBudgetLimit = async (category, limit) => {
-    if (!currentUser) return;
-    try {
-      const updatedBudgets = budgets.map(b => b.category === category ? { ...b, limit } : b);
-      const targetBudget = updatedBudgets.find(b => b.category === category);
-      if (targetBudget) {
-        const budgetRef = doc(db, "users", currentUser.uid, "budgets", category);
-        await setDoc(budgetRef, { limit: targetBudget.limit, category: targetBudget.category });
-      }
-      setBudgets(updatedBudgets);
-    } catch (error) {
-      console.error("Error updating budget:", error);
-    }
-  };
 
-  // --- Add Goal ---
-  const handleAddGoal = async (newGoal) => {
-    if (!currentUser) return;
-    try {
-      const goalRef = doc(db, "users", currentUser.uid, "goals", newGoal.id);
-      await setDoc(goalRef, newGoal);
-      setGoals(prev => [...prev, newGoal]);
-    } catch (error) {
-      console.error("Error adding goal:", error);
-    }
-  };
 
-  // --- Delete Goal ---
-  const handleDeleteGoal = async (goalId) => {
-    if (!currentUser) return;
-    try {
-      const goalRef = doc(db, "users", currentUser.uid, "goals", goalId);
-      await deleteDoc(goalRef);
-      setGoals(prev => prev.filter(g => g.id !== goalId));
-    } catch (error) {
-      console.error("Error deleting goal:", error);
-    }
-  };
 
-  // --- Contribute to Savings Goal ---
-  const handleContributeToGoal = async (goalId, fromAccId, amount) => {
-    if (!currentUser) return;
-    const targetGoal = goals.find(g => g.id === goalId);
-    if (!targetGoal) return;
-
-    try {
-      const batch = writeBatch(db);
-
-      // 1. Update Goal savings
-      const updatedGoal = { ...targetGoal, current: targetGoal.current + amount };
-      const goalRef = doc(db, "users", currentUser.uid, "goals", goalId);
-      batch.set(goalRef, updatedGoal);
-
-      // 2. Add transaction of type 'transfer'
-      const newTx = {
-        id: 'tx-' + Date.now(),
-        type: 'transfer',
-        amount: amount,
-        fromAccountId: fromAccId,
-        toAccountId: 'savings',
-        category: 'savings',
-        date: new Date().toISOString().split('T')[0],
-        notes: `"${targetGoal.name}" jamg'arma maqsadiga o'tkazma`
-      };
-      const txRef = doc(db, "users", currentUser.uid, "transactions", newTx.id);
-      batch.set(txRef, newTx);
-
-      // 3. Update account balance
-      const updatedAccounts = accounts.map(acc => {
-        if (acc.id === fromAccId) {
-          return { ...acc, balance: acc.balance - amount };
-        }
-        if (acc.id === 'savings') {
-          return { ...acc, balance: acc.balance + amount };
-        }
-        return acc;
-      });
-
-      updatedAccounts.forEach(acc => {
-        const accRef = doc(db, "users", currentUser.uid, "accounts", acc.id);
-        batch.set(accRef, acc);
-      });
-
-      await batch.commit();
-
-      setGoals(prev => prev.map(g => g.id === goalId ? updatedGoal : g));
-      setAccounts(updatedAccounts);
-      setTransactions(prev => [newTx, ...prev]);
-    } catch (error) {
-      console.error("Error contributing to goal:", error);
-    }
-  };
 
   // --- Add Account ---
   const handleAddAccount = async (newAcc) => {
@@ -735,9 +650,7 @@ export default function App() {
   const handleExportData = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
       accounts,
-      transactions,
-      budgets,
-      goals
+      transactions
     }, null, 2));
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
@@ -760,16 +673,10 @@ export default function App() {
           <Dashboard 
             transactions={transactions}
             accounts={accounts}
-            budgets={budgets}
-            goals={goals}
             setActiveTab={setActiveTab}
             onOpenAddTransaction={(type) => {
-              setActiveTab('transactions');
-              // Small delay to let Transactions mount, then open modal
-              setTimeout(() => {
-                const addBtn = document.querySelector('.btn-primary');
-                if (addBtn) addBtn.click();
-              }, 100);
+              setTxModalType(type);
+              setIsTxModalOpen(true);
             }}
           />
         );
@@ -781,24 +688,10 @@ export default function App() {
             onAddTransaction={handleAddTransaction}
             onDeleteTransaction={handleDeleteTransaction}
             onExportData={handleExportData}
-          />
-        );
-      case 'budgets':
-        return (
-          <Budgets 
-            budgets={budgets}
-            transactions={transactions}
-            onUpdateBudgetLimit={handleUpdateBudgetLimit}
-          />
-        );
-      case 'goals':
-        return (
-          <Goals 
-            goals={goals}
-            accounts={accounts}
-            onAddGoal={handleAddGoal}
-            onDeleteGoal={handleDeleteGoal}
-            onContributeToGoal={handleContributeToGoal}
+            onOpenAddTransaction={(type) => {
+              setTxModalType(type);
+              setIsTxModalOpen(true);
+            }}
           />
         );
       case 'accounts':
@@ -810,16 +703,150 @@ export default function App() {
             onTransferFunds={handleTransferFunds}
           />
         );
-
-      case 'habits':
+      
+      case 'settings':
         return (
-          <SmartHabits 
-            transactions={transactions}
-            accounts={accounts}
-            budgets={budgets}
-            goals={goals}
-          />
+          <div className="glass-panel p-6 space-y-6">
+            <h2 className="text-xl font-extrabold">Sozlamalar</h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                <div>
+                  <h4 className="font-bold text-sm">Mavzu</h4>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">Tizim mavzusini tanlang (yorug' yoki qorong'i)</p>
+                </div>
+                <button 
+                  onClick={toggleTheme} 
+                  className="btn-secondary rounded-full py-1.5 px-4 text-xs font-bold"
+                >
+                  {theme === 'dark' ? 'Yorug\'' : 'Qorong\'i'}
+                </button>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                <div>
+                  <h4 className="font-bold text-sm">Foydalanuvchi</h4>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">Hozirgi foydalanuvchi ma'lumotlari</p>
+                </div>
+                <span className="text-xs font-bold text-purple-400">{currentUser?.displayName || 'Mehmon'}</span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
+                <div>
+                  <h4 className="font-bold text-sm">Tizimdan chiqish</h4>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">Hisobingizdan xavfsiz tarzda chiqib ketish</p>
+                </div>
+                <button 
+                  onClick={handleLogout} 
+                  className="btn-danger rounded-full py-1.5 px-4 text-xs font-bold"
+                >
+                  Chiqish
+                </button>
+              </div>
+            </div>
+
+            {/* Kategoriyalar boshqaruvi */}
+            <div className="border-t border-white/5 pt-6 space-y-4">
+              <div>
+                <h3 className="text-base font-extrabold text-white">Kategoriyalar</h3>
+                <p className="text-xs text-[var(--text-secondary)] mt-0.5">Tizimdagi amaliyotlar kategoriyalarini boshqaring va yangilarini qo'shing</p>
+              </div>
+
+              {/* Form to Add Category */}
+              <form onSubmit={handleAddCategoryForm} className="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-white/5 p-4 rounded-2xl border border-white/5">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-extrabold text-[var(--text-secondary)] uppercase tracking-wider">Kategoriya Nomi</label>
+                  <input 
+                    type="text"
+                    required
+                    placeholder="Masalan: Sayohat"
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-black/20 p-2.5 text-xs text-white outline-none focus:border-purple-500/50"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-extrabold text-[var(--text-secondary)] uppercase tracking-wider">Turi</label>
+                  <select 
+                    value={newCatType}
+                    onChange={(e) => setNewCatType(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-black/20 p-2.5 text-xs text-white outline-none cursor-pointer focus:border-purple-500/50"
+                  >
+                    <option value="expense" className="bg-slate-900 text-white">Xarajat</option>
+                    <option value="income" className="bg-slate-900 text-white">Daromad</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-extrabold text-[var(--text-secondary)] uppercase tracking-wider">Rangi</label>
+                  <select 
+                    value={newCatColor}
+                    onChange={(e) => setNewCatColor(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-black/20 p-2.5 text-xs text-white outline-none cursor-pointer focus:border-purple-500/50"
+                  >
+                    <option value="rose" className="bg-slate-900 text-white">Pushti (Rose)</option>
+                    <option value="emerald" className="bg-slate-900 text-white">Yashil (Emerald)</option>
+                    <option value="blue" className="bg-slate-900 text-white">Moviy (Blue)</option>
+                    <option value="amber" className="bg-slate-900 text-white">Sariq (Amber)</option>
+                    <option value="indigo" className="bg-slate-900 text-white">To'q ko'k (Indigo)</option>
+                    <option value="purple" className="bg-slate-900 text-white">Siyohrang (Purple)</option>
+                  </select>
+                </div>
+                <div className="flex items-end">
+                  <button 
+                    type="submit"
+                    className="w-full btn-primary rounded-xl py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Qo'shish</span>
+                  </button>
+                </div>
+              </form>
+
+              {/* List Categories */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                {/* Expense Categories */}
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-rose-400">Xarajat kategoriyalari</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {categories.expense?.map(cat => (
+                      <div key={cat.id} className="flex items-center gap-2 bg-white/5 border border-white/5 py-1 px-3 rounded-full text-xs text-white/90">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${getCatColor(cat.color)}`} />
+                        <span>{cat.name}</span>
+                        <button 
+                          type="button"
+                          onClick={() => handleRemoveCategory('expense', cat.id)}
+                          className="text-white/40 hover:text-rose-400 ml-1 font-bold cursor-pointer text-sm"
+                          title="O'chirish"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Income Categories */}
+                <div className="space-y-2">
+                  <h4 className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400">Daromad kategoriyalari</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {categories.income?.map(cat => (
+                      <div key={cat.id} className="flex items-center gap-2 bg-white/5 border border-white/5 py-1 px-3 rounded-full text-xs text-white/90">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${getCatColor(cat.color)}`} />
+                        <span>{cat.name}</span>
+                        <button 
+                          type="button"
+                          onClick={() => handleRemoveCategory('income', cat.id)}
+                          className="text-white/40 hover:text-rose-400 ml-1 font-bold cursor-pointer text-sm"
+                          title="O'chirish"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         );
+
       default:
         return <div>Sahifa topilmadi</div>;
     }
@@ -1314,9 +1341,7 @@ export default function App() {
   const tabIndices = {
     dashboard: 0,
     transactions: 1,
-    budgets: 2,
-    goals: 3,
-    habits: 4
+    settings: 2
   };
   const activeTabIdx = tabIndices[activeTab] ?? 0;
 
@@ -1377,28 +1402,6 @@ export default function App() {
               <Calendar className="w-5 h-5" />
               <span>Tranzaksiyalar</span>
             </button>
-            <button 
-              onClick={() => setActiveTab('budgets')} 
-              className={`w-full nav-link ${activeTab === 'budgets' ? 'active' : ''}`}
-            >
-              <AlertTriangle className="w-5 h-5" />
-              <span>Budjet Nazorati</span>
-            </button>
-            <button 
-              onClick={() => setActiveTab('goals')} 
-              className={`w-full nav-link ${activeTab === 'goals' ? 'active' : ''}`}
-            >
-              <Target className="w-5 h-5" />
-              <span>Jamg'armalar</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab('habits')} 
-              className={`w-full nav-link ${activeTab === 'habits' ? 'active' : ''}`}
-            >
-              <Sparkles className="w-5 h-5" />
-              <span>Smart Odatlar</span>
-            </button>
           </nav>
         </div>
 
@@ -1415,7 +1418,7 @@ export default function App() {
       <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden pb-0 gap-4">
         
         {/* Top Header / Notification Bar */}
-        <header className="glass-panel p-3 px-6 flex items-center justify-between gap-4 rounded-full shrink-0">
+        <header className="glass-panel p-3 px-6 flex items-center justify-between gap-4 rounded-full shrink-0 sticky top-0 z-40">
           {/* Mobile Brand Title */}
           <div className="flex items-center gap-3 lg:hidden">
             <MMCurrencyIcon className="w-6 h-6 text-purple-500" />
@@ -1429,11 +1432,8 @@ export default function App() {
             <span className="text-purple-400">
               {activeTab === 'dashboard' && 'Boshqaruv paneli'}
               {activeTab === 'transactions' && 'Tranzaksiyalar'}
-              {activeTab === 'budgets' && 'Budjet nazorati'}
-              {activeTab === 'goals' && 'Jamg\'armalar'}
-              {activeTab === 'accounts' && 'Hamyonlar'}
-              {activeTab === 'analytics' && 'Moliya tahlili'}
-              {activeTab === 'habits' && 'Smart odatlar'}
+              {activeTab === 'accounts' && 'Jamg\'arma va Investitsiya'}
+              {activeTab === 'settings' && 'Sozlamalar'}
             </span>
           </div>
 
@@ -1508,7 +1508,7 @@ export default function App() {
         </header>
 
         {/* View Section */}
-        <section className="flex-1 p-4 pb-24 lg:pb-4 overflow-y-auto space-y-4 min-h-0">
+        <section className="main-content flex-1 p-4 pb-36 lg:pb-4 overflow-y-auto space-y-4 min-h-0">
           {activeTab !== 'dashboard' && (
             <div className="flex">
               <button 
@@ -1522,18 +1522,20 @@ export default function App() {
             </div>
           )}
           {renderActiveView()}
+          {/* Spacing to prevent mobile navigation bar overlap */}
+          <div className="h-56 md:hidden block shrink-0 pointer-events-none" />
         </section>
 
         {/* Mobile Navigation bar (shows only on smaller devices) */}
         <div className="lg:hidden mobile-nav-container">
-          <div className="glass-panel py-2 px-4 flex justify-between items-center gap-1 rounded-full relative">
+          <div className="glass-panel py-2 px-[7px] flex justify-between items-center gap-0 rounded-full relative">
             
             {/* Sliding Liquid Drop Blob Indicator */}
             <div 
               className="mobile-nav-indicator"
               style={{
-                width: 'calc((100% - 32px) / 5)', // subtracting px-4 container padding (16px left + 16px right)
-                left: '16px',
+                width: 'calc((100% - 14px) / 3)', // dividing by 3 tabs now
+                left: '7px',
                 transform: `translateX(calc(${activeTabIdx} * 100%))`,
                 transition: 'transform 0.5s cubic-bezier(0.25, 1.45, 0.4, 1)' // GPU-accelerated liquid drop animation
               }}
@@ -1541,42 +1543,29 @@ export default function App() {
 
             <button 
               onClick={() => setActiveTab('dashboard')} 
-              className={`mobile-nav-btn flex flex-col items-center gap-1 flex-1 py-2 px-1 rounded-full transition-all ${activeTab === 'dashboard' ? 'active' : ''}`}
+              className={`mobile-nav-btn flex flex-col items-center justify-center flex-1 py-2 px-1 rounded-full transition-all ${activeTab === 'dashboard' ? 'active' : ''}`}
+              style={{ minHeight: '44px' }}
             >
               <LayoutDashboard className="w-5 h-5" />
-              <span className="text-[10px] font-bold">Panel</span>
+              {activeTab === 'dashboard' && <span className="text-[9px] font-extrabold tracking-tight mt-0.5 animate-fade-in">Dashboard</span>}
             </button>
             
             <button 
               onClick={() => setActiveTab('transactions')} 
-              className={`mobile-nav-btn flex flex-col items-center gap-1 flex-1 py-2 px-1 rounded-full transition-all ${activeTab === 'transactions' ? 'active' : ''}`}
+              className={`mobile-nav-btn flex flex-col items-center justify-center flex-1 py-2 px-1 rounded-full transition-all ${activeTab === 'transactions' ? 'active' : ''}`}
+              style={{ minHeight: '44px' }}
             >
               <Calendar className="w-5 h-5" />
-              <span className="text-[10px] font-bold">Tarix</span>
+              {activeTab === 'transactions' && <span className="text-[9px] font-extrabold tracking-tight mt-0.5 animate-fade-in">Tarix</span>}
             </button>
 
             <button 
-              onClick={() => setActiveTab('budgets')} 
-              className={`mobile-nav-btn flex flex-col items-center gap-1 flex-1 py-2 px-1 rounded-full transition-all ${activeTab === 'budgets' ? 'active' : ''}`}
+              onClick={() => setActiveTab('settings')} 
+              className={`mobile-nav-btn flex flex-col items-center justify-center flex-1 py-2 px-1 rounded-full transition-all ${activeTab === 'settings' ? 'active' : ''}`}
+              style={{ minHeight: '44px' }}
             >
-              <AlertTriangle className="w-5 h-5" />
-              <span className="text-[10px] font-bold">Budjet</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab('goals')} 
-              className={`mobile-nav-btn flex flex-col items-center gap-1 flex-1 py-2 px-1 rounded-full transition-all ${activeTab === 'goals' ? 'active' : ''}`}
-            >
-              <Target className="w-5 h-5" />
-              <span className="text-[10px] font-bold">Maqsad</span>
-            </button>
-
-            <button 
-              onClick={() => setActiveTab('habits')} 
-              className={`mobile-nav-btn flex flex-col items-center gap-1 flex-1 py-2 px-1 rounded-full transition-all ${activeTab === 'habits' ? 'active' : ''}`}
-            >
-              <Sparkles className="w-5 h-5" />
-              <span className="text-[10px] font-bold">Odatlar</span>
+              <Settings className="w-5 h-5" />
+              {activeTab === 'settings' && <span className="text-[9px] font-extrabold tracking-tight mt-0.5 animate-fade-in">Sozlamalar</span>}
             </button>
           </div>
         </div>
@@ -1644,6 +1633,16 @@ export default function App() {
       )}
 
       </main>
+
+      {/* Transaction Modal at the root level to cover full viewport including panels */}
+      <TransactionModal
+        isOpen={isTxModalOpen}
+        onClose={() => setIsTxModalOpen(false)}
+        accounts={accounts}
+        onAddTransaction={handleAddTransaction}
+        initialType={txModalType}
+        categories={categories}
+      />
     </div>
-);
+  );
 }

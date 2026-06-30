@@ -19,75 +19,13 @@ export default function Transactions({
   accounts,
   onAddTransaction,
   onDeleteTransaction,
-  onExportData
+  onExportData,
+  onOpenAddTransaction
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterAccount, setFilterAccount] = useState('all');
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Form State
-  const [type, setType] = useState('expense');
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('');
-  const [accountId, setAccountId] = useState('');
-  const [fromAccountId, setFromAccountId] = useState('');
-  const [toAccountId, setToAccountId] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [notes, setNotes] = useState('');
-
-  // Handle Form Submission
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!amount || Number(amount) <= 0) {
-      alert('Iltimos, to\'g\'ri summa kiriting');
-      return;
-    }
-
-    if (type === 'transfer') {
-      if (!fromAccountId || !toAccountId) {
-        alert('Iltimos, jo\'natuvchi va qabul qiluvchi hisobni tanlang');
-        return;
-      }
-      if (fromAccountId === toAccountId) {
-        alert('Jo\'natuvchi va qabul qiluvchi hisoblar bir xil bo\'lmasligi kerak');
-        return;
-      }
-    } else {
-      if (!accountId) {
-        alert('Iltimos, hisobni tanlang');
-        return;
-      }
-      if (!category) {
-        alert('Iltimos, kategoriyani tanlang');
-        return;
-      }
-    }
-
-    const newTx = {
-      id: 'tx-' + Date.now(),
-      type,
-      amount: Number(amount),
-      category: type === 'transfer' ? 'transfer' : category,
-      date,
-      notes,
-      ...(type === 'transfer' ? { fromAccountId, toAccountId } : { accountId })
-    };
-
-    onAddTransaction(newTx);
-    resetForm();
-    setIsModalOpen(false);
-  };
-
-  const resetForm = () => {
-    setAmount('');
-    setCategory('');
-    setAccountId('');
-    setFromAccountId('');
-    setToAccountId('');
-    setNotes('');
-    setDate(new Date().toISOString().split('T')[0]);
-  };
 
   // Filter Transactions
   const filteredTransactions = transactions.filter(tx => {
@@ -156,7 +94,7 @@ export default function Transactions({
           </button>
           
           <button 
-            onClick={() => { setType('expense'); setIsModalOpen(true); }} 
+            onClick={() => onOpenAddTransaction('expense')} 
             className="btn-primary rounded-xl py-2.5"
           >
             <Plus className="w-4 h-4" />
@@ -166,7 +104,7 @@ export default function Transactions({
       </div>
 
       {/* Filter and search panel */}
-      <div className="glass-panel p-5 grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="glass-panel p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Search Input */}
         <div className="relative md:col-span-2">
           <Search 
@@ -192,21 +130,6 @@ export default function Transactions({
             <option value="all">Barcha turlari</option>
             <option value="income">Kirimlar (Daromad)</option>
             <option value="expense">Chiqimlar (Xarajat)</option>
-            <option value="transfer">O'tkazmalar</option>
-          </select>
-        </div>
-
-        {/* Account Filter */}
-        <div className="relative">
-          <select 
-            value={filterAccount} 
-            onChange={(e) => setFilterAccount(e.target.value)}
-            className="w-full rounded-xl py-2.5"
-          >
-            <option value="all">Barcha hisoblar</option>
-            {accounts.map(acc => (
-              <option key={acc.id} value={acc.id}>{acc.name}</option>
-            ))}
           </select>
         </div>
       </div>
@@ -220,7 +143,6 @@ export default function Transactions({
               <tr className="border-b border-white/5">
                 <th className="font-semibold text-sm">Turi</th>
                 <th className="font-semibold text-sm">Kategoriya / Izoh</th>
-                <th className="font-semibold text-sm">Hisob (Hamyon)</th>
                 <th className="font-semibold text-sm">Sana</th>
                 <th className="font-semibold text-sm text-right">Summa</th>
                 <th className="font-semibold text-sm text-center">Amallar</th>
@@ -258,11 +180,7 @@ export default function Transactions({
                         {tx.notes && <span className="text-xs text-[var(--text-secondary)] italic mt-0.5">{tx.notes}</span>}
                       </div>
                     </td>
-                    <td>
-                      <span className="text-sm font-medium text-[var(--text-secondary)] truncate max-w-[160px] inline-block" title={accountLabel}>
-                        {accountLabel}
-                      </span>
-                    </td>
+
                     <td>
                       <div className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
                         <Calendar className="w-3.5 h-3.5 text-[var(--text-muted)]" />
@@ -328,7 +246,7 @@ export default function Transactions({
                     </div>
                     {tx.notes && <p className="tx-notes mt-1">{tx.notes}</p>}
                     <span className="text-[10px] text-[var(--text-muted)] mt-1.5 font-medium">
-                      {accountLabel} &bull; {new Date(tx.date).toLocaleDateString('uz-UZ')}
+                      {new Date(tx.date).toLocaleDateString('uz-UZ')}
                     </span>
                   </div>
                 </div>
@@ -357,178 +275,6 @@ export default function Transactions({
           )}
         </div>
       </div>
-
-      {/* Add Transaction Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="glass-panel w-full max-w-md p-6 relative overflow-hidden animate-scale-up space-y-4 my-auto">
-            
-            <div className="flex justify-between items-center pb-2 border-b border-white/5">
-              <h3 className="text-xl font-bold">Yangi Amaliyot</h3>
-              <button 
-                onClick={() => { setIsModalOpen(false); resetForm(); }}
-                className="p-1 rounded-lg hover:bg-white/10 text-[var(--text-secondary)] hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              
-              {/* Type Switcher */}
-              <div className="grid grid-cols-3 gap-2 bg-black/20 light-theme:bg-slate-200 p-1 rounded-xl">
-                <button 
-                  type="button"
-                  onClick={() => { setType('expense'); setCategory(''); }}
-                  className={`py-2 text-xs font-bold rounded-lg transition-all ${
-                    type === 'expense' ? 'bg-rose-500 text-white shadow' : 'text-[var(--text-secondary)] hover:text-white'
-                  }`}
-                >
-                  Xarajat
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => { setType('income'); setCategory(''); }}
-                  className={`py-2 text-xs font-bold rounded-lg transition-all ${
-                    type === 'income' ? 'bg-emerald-500 text-white shadow' : 'text-[var(--text-secondary)] hover:text-white'
-                  }`}
-                >
-                  Daromad
-                </button>
-                <button 
-                  type="button"
-                  onClick={() => { setType('transfer'); setCategory('transfer'); }}
-                  className={`py-2 text-xs font-bold rounded-lg transition-all ${
-                    type === 'transfer' ? 'bg-blue-500 text-white shadow' : 'text-[var(--text-secondary)] hover:text-white'
-                  }`}
-                >
-                  O'tkazma
-                </button>
-              </div>
-
-              {/* Amount */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Summa (UZS)</label>
-                <input 
-                  type="number" 
-                  required
-                  placeholder="Summani kiriting..."
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-
-              {/* Accounts Logic based on Type */}
-              {type === 'transfer' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Kimdan (Jo'natuvchi)</label>
-                    <select 
-                      required
-                      value={fromAccountId}
-                      onChange={(e) => setFromAccountId(e.target.value)}
-                      className="w-full"
-                    >
-                      <option value="">Hisob tanlang</option>
-                      {accounts.map(acc => (
-                        <option key={acc.id} value={acc.id}>{acc.name} ({formatUZS(acc.balance)})</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Kimga (Qabul qiluvchi)</label>
-                    <select 
-                      required
-                      value={toAccountId}
-                      onChange={(e) => setToAccountId(e.target.value)}
-                      className="w-full"
-                    >
-                      <option value="">Hisob tanlang</option>
-                      {accounts.map(acc => (
-                        <option key={acc.id} value={acc.id}>{acc.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Hisob (Hamyon)</label>
-                    <select 
-                      required
-                      value={accountId}
-                      onChange={(e) => setAccountId(e.target.value)}
-                      className="w-full"
-                    >
-                      <option value="">Tanlang</option>
-                      {accounts.map(acc => (
-                        <option key={acc.id} value={acc.id}>{acc.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Kategoriya</label>
-                    <select 
-                      required
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
-                      className="w-full"
-                    >
-                      <option value="">Kategoriya</option>
-                      {initialCategories[type]?.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              {/* Date & Tags */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Sana</label>
-                <input 
-                  type="date" 
-                  required
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-
-              {/* Notes */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-[var(--text-secondary)] uppercase">Izoh (Izoh/Eslatma)</label>
-                <textarea 
-                  placeholder="Xarid tafsilotlari yoki qo'shimcha eslatma..."
-                  rows="2"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="w-full resize-none"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2 border-t border-white/5">
-                <button 
-                  type="button" 
-                  onClick={() => { setIsModalOpen(false); resetForm(); }}
-                  className="btn-secondary rounded-xl py-2 px-4"
-                >
-                  Bekor qilish
-                </button>
-                <button 
-                  type="submit" 
-                  className={`${type === 'income' ? 'btn-success' : type === 'expense' ? 'btn-danger' : 'btn-primary'} rounded-xl py-2 px-5`}
-                >
-                  Qo'shish
-                </button>
-              </div>
-
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
