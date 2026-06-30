@@ -100,7 +100,7 @@ export default function Dashboard({
   onOpenAddTransaction
 }) {
   const [chartTab, setChartTab] = useState('combined');
-  const [timeFrame, setTimeFrame] = useState('monthly');
+  const [timeFrame, setTimeFrame] = useState('weekly');
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const today = new Date();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
